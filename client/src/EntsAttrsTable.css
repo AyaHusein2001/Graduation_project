@@ -1,0 +1,69 @@
+.attributes-row {
+    display: flex;
+    align-items: center;
+    margin-top: 8px;
+  }
+  
+  .attribute {
+    display: flex;
+    align-items: center;
+    padding: 4px 8px;
+    border: 1px solid #ccc;
+    margin-right: 8px;
+    border-radius: 4px;
+  }
+  
+  .close-icon {
+    margin-left: 8px;
+    cursor: pointer;
+    transition: color 0.3s;
+  }
+  
+  .close-icon:hover {
+    color: red;
+  }
+  
+  .add-attribute {
+    display: flex;
+    align-items: center;
+    margin-top: 8px;
+  }
+  
+
+  
+
+  .add-attribute button {
+    padding: 4px 8px;
+    margin-bottom: -15px;
+  }
+  .attribute.primary-key {
+    background-color: #B27EC8; /* Blueish color */
+  }
+  
+  .attribute.foreign-key {
+    background-color: #ffb3b3; /* Rosey color */
+  }
+  
+  .close-icon {
+    cursor: pointer;
+    margin-left: 5px;
+  }
+  
+  .attributes-row {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  
+  .attribute {
+    margin: 5px;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  .add-attribute {
+    margin-top: 10px;
+  }
+
+  
+  
