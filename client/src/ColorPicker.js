@@ -12,8 +12,11 @@ const ColorPicker = ({ onColorChange }) => {
 
   return (
     <div>
-      <ChromePicker color={color} onChange={handleColorChange} />
-      <p>Selected Color: {color}</p>
+      <ChromePicker 
+       styles={{ default: { picker: { marginRight: '100px',marginBottom:'-50px' } } }} 
+      
+      color={color} onChange={handleColorChange} />
+      {/* <p>Selected Color: {color}</p> */}
     </div>
   );
 };

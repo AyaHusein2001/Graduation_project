@@ -13,16 +13,58 @@ import { IoMdClose } from "react-icons/io";
 import "./EntsAttrsTable.css"; // Assuming you have a CSS file for styling
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { green, purple } from "@mui/material/colors";
+import {  CssBaseline  } from '@mui/material';
 import backgroundImage from "./assets/background.jpg";
 import CircularProgress from "@mui/material/CircularProgress";
-
+import { red } from '@mui/material/colors';
+import headerImage from './assets/headerImage.png'; 
+// const theme = createTheme({
+//   palette: {
+//     primary: {
+//       main: "#FFFFFF",
+//     },
+//     secondary: {
+//       main: "#ff7100",
+//     },
+//   },
+// });
 const theme = createTheme({
-  palette: {
+    palette: {
     primary: {
-      main: "#a819d3",
+      main: "#FFC683",
     },
     secondary: {
-      main: "#ff7100",
+      main: "#2A3547",
+    },
+  },
+  components: {
+    MuiInput: {
+      styleOverrides: {
+        root: {
+          '&:before': {
+            borderBottomColor: '#FFC683', // Change the underline color before focus
+          },
+          '&:hover:not(.Mui-disabled):before': {
+            borderBottomColor: '#FFFFFF', // Change the underline color on hover
+          },
+          '&:after': {
+            borderBottomColor: '#FFFFFF', // Change the underline color when focused
+          },
+        },
+        input: {
+          color: 'white', // Change the input text color to white
+        },
+      },
+    },
+    MuiInputLabel: {
+      styleOverrides: {
+        root: {
+          color: '#FFC683', // Change the label color
+        },
+        focused: {
+          color: '#FFFFFF', // Change the label color when focused
+        },
+      },
     },
   },
 });
@@ -191,30 +233,69 @@ export default function FormDialog() {
     setShowColorPicker((prevShowColorPicker) => !prevShowColorPicker);
   };
 
+  // const divStyle = {
+  //   backgroundImage: `url(${backgroundImage})`,
+  //   backgroundSize: "cover",
+  //   backgroundRepeat: "no-repeat",
+  //   backgroundPosition: "center",
+  //   height: "100vh",
+  //   // overflow: 'hidden',
+  //   display: "flex",
+  //   flexDirection: "column",
+  //   alignItems: "flex-start",
+  //   justifyContent: "center",
+  //   gap: "20px", // Adjust the gap as needed
+  //   "padding-left": "200px",
+  // };
+  // const divStyle = {
+  //   backgroundImage: `url(${backgroundImage})`,
+  //   backgroundSize: 'cover',
+    
+  //   backgroundRepeat: 'no-repeat',
+  //   // backgroundPosition: 'center',
+  //   // height: '150vh',
+  //   // width: '100vw', // Make sure it covers the entire viewport width
+  //   display: 'flex',
+  //   flexDirection: 'column',
+  //   alignItems: 'flex-start',
+  //   justifyContent: 'center',
+  //   gap: '20px', // Adjust the gap as needed
+  //   paddingLeft: '200px', // Use camelCase for paddingLeft
+  // };
+
   const divStyle = {
     backgroundImage: `url(${backgroundImage})`,
-    backgroundSize: "cover",
-    backgroundRepeat: "no-repeat",
-    backgroundPosition: "center",
-    height: "100vh",
-    // overflow: 'hidden',
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "20px", // Adjust the gap as needed
-  };
+    backgroundSize: 'cover',
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'center',
+    minHeight: '100vh', // Ensure the minimum height of the viewport
+    // width: '100vw',     // Ensure the full width of the viewport
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    gap: '20px',        // Adjust the gap as needed
+    paddingLeft: '200px',// Use camelCase for paddingLeft
+    paddingBottom: '100px',// Use camelCase for paddingLeft
 
+  };
+  
   const textFieldStyle = {
     width: "50%", // Adjust the width as needed
-    borderColor: error ? "red" : "",
+    borderColor: error ? "red" : "black",
+    
   };
 
   return (
     <div className="App" style={divStyle}>
       <ThemeProvider theme={theme}>
+      <CssBaseline />
         <React.Fragment>
-          <h1 style={{ color: "#a819d3", textAlign: "center" }}>Webby</h1>
+          {/* <h1 style={{ color: "#FFFFFF", textAlign: "center" }}>Webby</h1> */}
+
+        <img src={headerImage} alt="Header" style={{ width: '20%', height: 'auto' ,marginBottom:'-80px'}}  />
+
+   
 
           <TextField
             id="standard-basic-2"
@@ -241,7 +322,7 @@ export default function FormDialog() {
             sx={textFieldStyle}
           />
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <Button color="primary" onClick={toggleColorPicker}>
+            <Button color="primary" variant="contained" onClick={toggleColorPicker}>
               {showColorPicker ? "Close" : "Open"} Color Picker
             </Button>
           </div>
@@ -250,7 +331,7 @@ export default function FormDialog() {
           ) : (
             <></>
           )}
-          <Button variant="contained" onClick={handleSubmit}>
+          <Button variant="contained" sx={{alignSelf:'center',marginLeft:'-100px'}} onClick={handleSubmit}>
             Submit
           </Button>
 
@@ -295,11 +376,34 @@ export default function FormDialog() {
                         id="newElement"
                         label="New Table"
                         fullWidth
+                        color="secondary"
                         variant="standard"
                         value={newElement}
                         onChange={(e) => setNewElement(e.target.value)}
+                        sx={{
+                          '& .MuiInput-root': {
+                            '&:before': {
+                              borderBottomColor: 'black', // Change the underline color before focus
+                            },
+                            '&:hover:not(.Mui-disabled):before': {
+                              borderBottomColor: 'black', // Change the underline color on hover
+                            },
+                            '&:after': {
+                              borderBottomColor: 'black', // Change the underline color when focused
+                            },
+                            '& input': {
+                              color: 'black', // Change the text color to white
+                            },
+                          },
+                          '& .MuiInputLabel-root': {
+                            color: 'black', // Change the label color
+                          },
+                          '& .MuiInputLabel-root.Mui-focused': {
+                            color: 'black', // Change the label color when focused
+                          },
+                        }}
                       />
-                      <Button onClick={handleAddElement} color="primary">
+                      <Button color="secondary" onClick={handleAddElement}>
                         Add
                       </Button>
                     </>
@@ -313,7 +417,7 @@ export default function FormDialog() {
                           height: "100px",
                         }}
                       >
-                        <CircularProgress color="primary" />
+                        <CircularProgress color="secondary" />
                       </div>
                     </DialogContentText>
                   )}
@@ -330,7 +434,7 @@ export default function FormDialog() {
                           height: "100px",
                         }}
                       >
-                        <CircularProgress color="primary" />
+                        <CircularProgress color="secondary" />
                       </div>
                     </DialogContentText>
                   ) : (
@@ -384,6 +488,28 @@ export default function FormDialog() {
                                       e.target.value = "";
                                     }
                                   }}
+                                  sx={{
+                                    '& .MuiInput-root': {
+                                      '&:before': {
+                                        borderBottomColor: 'black', // Change the underline color before focus
+                                      },
+                                      '&:hover:not(.Mui-disabled):before': {
+                                        borderBottomColor: 'black', // Change the underline color on hover
+                                      },
+                                      '&:after': {
+                                        borderBottomColor: 'black', // Change the underline color when focused
+                                      },
+                                      '& input': {
+                                        color: 'black', // Change the text color to white
+                                      },
+                                    },
+                                    '& .MuiInputLabel-root': {
+                                      color: 'black', // Change the label color
+                                    },
+                                    '& .MuiInputLabel-root.Mui-focused': {
+                                      color: 'black', // Change the label color when focused
+                                    },
+                                  }}
                                 />
 
                               </div>
@@ -414,15 +540,15 @@ export default function FormDialog() {
               )}
             </DialogContent>
             <DialogActions>
-              <Button onClick={handleCloseDialog} color="primary">
+              <Button color="secondary" onClick={handleCloseDialog}>
                 Close
               </Button>
               {showEntsOnly ? (
-                <Button onClick={handleDialogSubmit} color="primary">
+                <Button  color="secondary" onClick={handleDialogSubmit}>
                   Submit
                 </Button>
               ) : (
-                <Button onClick={handleSave} color="primary">
+                <Button color="secondary" onClick={handleSave}>
                   Ok
                 </Button>
               )}

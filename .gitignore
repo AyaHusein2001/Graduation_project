@@ -25,3 +25,5 @@ yarn-error.log*
 *.h5
 *.txt
 *.csv
+*.jpg
+*.png
