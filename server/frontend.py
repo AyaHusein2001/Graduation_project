@@ -38,6 +38,12 @@ def frontendfunction(description, color):
     static_dir = 'D:/GP/Website/Graduation_project/myproject/myapp/static'
 
     move_files_and_folders(source_dir, static_dir, templates_dir, file_ext)
+    file_ext = '.css'  # Change this to '.css' or any other file extension as needed
+    source_dir = 'D:/GP/Website/Graduation_project/custom_admin'
+    templates_dir = 'D:/GP/Website/Graduation_project/myproject/myapp/templates'
+    static_dir = 'D:/GP/Website/Graduation_project/myproject/myapp/static'
+
+    move_files_and_folders(source_dir, static_dir, templates_dir, file_ext)
 
     old_file = 'D:\\GP\\Website\\Graduation_project\\myproject\\myproject\\urls.py'
     new_file = 'D:\\GP\\Website\\Graduation_project\\urls.py'

@@ -18,16 +18,7 @@ import backgroundImage from "./assets/background.jpg";
 import CircularProgress from "@mui/material/CircularProgress";
 import { red } from '@mui/material/colors';
 import headerImage from './assets/headerImage.png'; 
-// const theme = createTheme({
-//   palette: {
-//     primary: {
-//       main: "#FFFFFF",
-//     },
-//     secondary: {
-//       main: "#ff7100",
-//     },
-//   },
-// });
+
 const theme = createTheme({
     palette: {
     primary: {
@@ -42,27 +33,27 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           '&:before': {
-            borderBottomColor: '#FFAC35', // Change the underline color before focus
+            borderBottomColor: '#FFAC35', 
           },
           '&:hover:not(.Mui-disabled):before': {
-            borderBottomColor: '#FFFFFF', // Change the underline color on hover
+            borderBottomColor: '#FFFFFF', 
           },
           '&:after': {
-            borderBottomColor: '#FFFFFF', // Change the underline color when focused
+            borderBottomColor: '#FFFFFF', 
           },
         },
         input: {
-          color: 'white', // Change the input text color to white
+          color: 'white', 
         },
       },
     },
     MuiInputLabel: {
       styleOverrides: {
         root: {
-          color: '#FFAC35', // Change the label color
+          color: '#FFAC35', 
         },
         focused: {
-          color: '#FFFFFF', // Change the label color when focused
+          color: '#FFFFFF', 
         },
       },
     },
@@ -117,15 +108,15 @@ export default function FormDialog() {
   };
 
   const handleSubmit = async (e) => {
-    setOpenDialog(true);
-    e.preventDefault();
+    
     
     
     if (!databaseDescription.trim()) {
       setError(true);
       return;
     }
-
+    setOpenDialog(true);
+    e.preventDefault();
     try {
       const response = await fetch("process-text", {
         method: "POST",
@@ -187,7 +178,7 @@ export default function FormDialog() {
       setEntitiesWithAttr(data.entities_with_attr);
       setEntitiesWithPKs(data.entities_with_pks);
       setRelationships(data.relationships);
-      setResult([]); // Clear the result state
+      setResult([]);
     } catch (error) {
       console.error("There was an error processing the data!", error);
     }
@@ -205,16 +196,19 @@ export default function FormDialog() {
       console.log(entitiesWithAttr);
       console.log(entitiesWithPKs);
       console.log(relationshipsAsTuples);
-        // Only execute these lines after the first request is completed
-        setOpenDialog(false); // Close the dialog after saving
+   
+        setOpenDialog(false); 
         setShowEntsOnly(true);
-      // Await the axios post request
+  
       await axios.post("save", {
         entitiesWithAttr,
         entitiesWithPKs,
         relationships: relationshipsAsTuples,
       });
-      
+      setEntitiesWithAttr([]);
+      setEntitiesWithPKs([]);
+      setRelationships([]);
+      setResult([]);
 
     } catch (error) {
       console.error("Error saving data:", error);
@@ -247,69 +241,21 @@ export default function FormDialog() {
     } catch (error) {
       console.error("There was an error processing the text!", error);
       setError(true);
+    
     }
+    setDatabaseDescription("")
+    setGUIDescription("")
+    setSelectedColor("#ffffff")
+
   };
   
-  // const handleSave = async () => {
-  //   try {
-  //     const relationshipsAsTuples = relationships.map((arr) => [
-  //       arr[0],
-  //       arr[1],
-  //       arr[2],
-  //       arr[3],
-  //       arr[4],
-  //       arr[5],
-  //     ]);
-  //     console.log(entitiesWithAttr);
-  //     console.log(entitiesWithPKs);
-  //     console.log(relationshipsAsTuples);
-
-  //     axios.post("save", {
-  //       entitiesWithAttr,
-  //       entitiesWithPKs,
-  //       relationships: relationshipsAsTuples,
-  //     });
-  //     setOpenDialog(false); // Close the dialog after saving
-  //     setShowEntsOnly(true);
-  //   } catch (error) {
-  //     console.error("Error saving data:", error);
-  //   }
-
-  //   if (!guiDescription.trim()) {
-  //     setError(true);
-  //     return;
-  //   }
-  //   if (!selectedColor) {
-  //     setError(true);
-  //     return;
-  //   }
-  //   try {
-  //     console.log(guiDescription)
-  //     console.log(selectedColor)
-
-  //     const response = await fetch("get-temp", {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //       body: JSON.stringify({ description: guiDescription, color: selectedColor }),
-  //     });
-
-     
-  //     console.log(response)
-
-  //     setError(false);
-  //   } catch (error) {
-  //     console.error("There was an error processing the text!", error);
-  //     setError(true);
-  //   }
-   
-  // };
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setShowEntsOnly(true);
-
+    setDatabaseDescription("")
+    setGUIDescription("")
+    setSelectedColor("#ffffff")
     setResult([]);
     setNewElement("");
     setHideDeleteIcons(false);
@@ -318,7 +264,7 @@ export default function FormDialog() {
   const handleColorChange = (color) => {
     setSelectedColor(color);
     console.log("Selected color in App:", color);
-    // You can perform further actions with the selected color here
+
   };
 
   const toggleColorPicker = () => {
@@ -331,20 +277,19 @@ export default function FormDialog() {
     backgroundSize: 'cover',
     backgroundRepeat: 'no-repeat',
     backgroundPosition: 'center',
-    minHeight: '100vh', // Ensure the minimum height of the viewport
-    // width: '100vw',     // Ensure the full width of the viewport
+    minHeight: '100vh', 
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-start',
     justifyContent: 'center',
-    gap: '20px',        // Adjust the gap as needed
-    paddingLeft: '200px',// Use camelCase for paddingLeft
-    paddingBottom: '100px',// Use camelCase for paddingLeft
+    gap: '20px',        
+    paddingLeft: '200px',
+    paddingBottom: '100px',
 
   };
   
   const textFieldStyle = {
-    width: "50%", // Adjust the width as needed
+    width: "50%", 
     borderColor: error ? "red" : "black",
     
   };
@@ -354,7 +299,6 @@ export default function FormDialog() {
       <ThemeProvider theme={theme}>
       <CssBaseline />
         <React.Fragment>
-          {/* <h1 style={{ color: "#FFFFFF", textAlign: "center" }}>Webby</h1> */}
 
         <img src={headerImage} alt="Header" style={{ width: '20%', height: 'auto' ,marginBottom:'-80px'}}  />
 
@@ -448,23 +392,23 @@ export default function FormDialog() {
                         sx={{
                           '& .MuiInput-root': {
                             '&:before': {
-                              borderBottomColor: 'black', // Change the underline color before focus
+                              borderBottomColor: 'black', 
                             },
                             '&:hover:not(.Mui-disabled):before': {
-                              borderBottomColor: 'black', // Change the underline color on hover
+                              borderBottomColor: 'black', 
                             },
                             '&:after': {
-                              borderBottomColor: 'black', // Change the underline color when focused
+                              borderBottomColor: 'black',
                             },
                             '& input': {
-                              color: 'black', // Change the text color to white
+                              color: 'black', 
                             },
                           },
                           '& .MuiInputLabel-root': {
-                            color: 'black', // Change the label color
+                            color: 'black', 
                           },
                           '& .MuiInputLabel-root.Mui-focused': {
-                            color: 'black', // Change the label color when focused
+                            color: 'black', 
                           },
                         }}
                       />
@@ -556,23 +500,23 @@ export default function FormDialog() {
                                   sx={{
                                     '& .MuiInput-root': {
                                       '&:before': {
-                                        borderBottomColor: 'black', // Change the underline color before focus
+                                        borderBottomColor: 'black',
                                       },
                                       '&:hover:not(.Mui-disabled):before': {
-                                        borderBottomColor: 'black', // Change the underline color on hover
+                                        borderBottomColor: 'black',
                                       },
                                       '&:after': {
-                                        borderBottomColor: 'black', // Change the underline color when focused
+                                        borderBottomColor: 'black', 
                                       },
                                       '& input': {
-                                        color: 'black', // Change the text color to white
+                                        color: 'black', 
                                       },
                                     },
                                     '& .MuiInputLabel-root': {
-                                      color: 'black', // Change the label color
+                                      color: 'black', 
                                     },
                                     '& .MuiInputLabel-root.Mui-focused': {
-                                      color: 'black', // Change the label color when focused
+                                      color: 'black', 
                                     },
                                   }}
                                 />
