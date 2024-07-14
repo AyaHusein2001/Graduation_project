@@ -16,8 +16,9 @@ import numpy as np
 from nltk.stem import WordNetLemmatizer
 import shutil
 from tkinter import colorchooser
-nltk.download('wordnet')
-nltk.download('omw-1.4')
+from gensim.models import KeyedVectors
+# nltk.download('wordnet')
+# nltk.download('omw-1.4')
 def collect_descriptions_from_folder(folder_path,label):
     descriptions = []
     for filename in os.listdir(folder_path):
@@ -36,7 +37,7 @@ def collect_all_data():
     data=[]
     for i,fol in enumerate(fol_name):
         #3dly al path
-        folder_path = f"F:/GP/{fol}/desc"
+        folder_path = f"{fol}/desc"
         data+=collect_descriptions_from_folder(folder_path,labels[i])
     return data,label_to_folder
 
@@ -79,7 +80,7 @@ def classify(data,user_input,label_to_folder):
         folders = []
         for desc, category in zip(new_descriptions, predictions):
             #3dly al path
-            folder = os.path.join("F:/GP", label_to_folder[category])
+            folder =  label_to_folder[category]
             folders.append(folder)
         
         return folders
@@ -133,7 +134,7 @@ def compute_similarity(embeddings, query_embedding):
     similarities = cosine_similarity([query_embedding], embeddings).flatten()
     return similarities
 
-def collect_descriptions_from_folder(folder_path):
+def collect_descriptions_folder(folder_path):
     descriptions = []
     file_to_folder = {}
 
@@ -152,7 +153,7 @@ def collect_descriptions_from_folder(folder_path):
     return descriptions, file_to_folder
 
 def retrieve_top_k_websites(folder_path, user_input, word2vec_model, tfidf_vectorizer, k=5):
-    descriptions, file_to_folder = collect_descriptions_from_folder(folder_path)
+    descriptions, file_to_folder = collect_descriptions_folder(folder_path)
     preprocessed_descriptions = preprocess_texts(descriptions)
     embeddings = text_to_embedding(preprocessed_descriptions, word2vec_model, tfidf_vectorizer)
     preprocessed_input = preprocess_text(user_input)  # Ensure user_input is a string here
@@ -163,20 +164,23 @@ def retrieve_top_k_websites(folder_path, user_input, word2vec_model, tfidf_vecto
 
     return top_k_folders[:k]
 
-def top(folders):
+def top(folders,description):
     folder_path = folders[0]
-    word2vec_model = api.load("word2vec-google-news-300")
+    word2vec_model_path = 'D:\GP\Website\Graduation_project\GoogleNews-vectors-negative300.bin.gz'
+
+    # Load the model from the local file
+    word2vec_model = KeyedVectors.load_word2vec_format(word2vec_model_path, binary=True, limit=3000000)  # Load the first 100,000 vectors
 
     vectorizer = TfidfVectorizer()
 
-    top_k_folders = retrieve_top_k_websites(folder_path, user_input[0], word2vec_model, vectorizer, k=1)
+    top_k_folders = retrieve_top_k_websites(folder_path, description, word2vec_model, vectorizer, k=1)
     return top_k_folders
 
 
 def trans(top_k_folders):
-   if os.path.exists(top_k_folders[0]):
-     shutil.rmtree(top_k_folders[0])
-   shutil.copytree(top_k_folders[0], '9')
+   if os.path.exists('D:\GP\Website\Graduation_project\9'):
+     shutil.rmtree('D:\GP\Website\Graduation_project\9')
+   shutil.copytree(top_k_folders[0], 'D:\GP\Website\Graduation_project\9')
 
 def pick_color():
     # Open the color picker dialog
@@ -364,3 +368,175 @@ def readandwrite(html_file_path,updated_details):
     modified_html = modify_html(html_content, updated_details)
     with open(html_file_path, 'w', encoding='utf-8') as f:
         f.write(modified_html)
+
+import os
+import shutil
+
+def move_files_and_folders(source_dir, templates_dir, static_dir):
+    # Create target directories if they don't exist
+    os.makedirs(templates_dir, exist_ok=True)
+    os.makedirs(static_dir, exist_ok=True)
+
+    # Loop through all items in the source directory
+    for item in os.listdir(source_dir):
+        source_item = os.path.join(source_dir, item)
+        
+        # If the item is a file and ends with .html, move it to the templates directory
+        if os.path.isfile(source_item) and item.endswith('.html'):
+            shutil.copy(source_item, os.path.join(templates_dir, item))
+        
+        # If the item is a directory, move it to the static directory
+        elif os.path.isdir(source_item):
+            shutil.copytree(source_item, os.path.join(static_dir, item))
+def move_admin(source_dir, templates_dir, static_dir):
+    # Create target directories if they don't exist
+    os.makedirs(templates_dir, exist_ok=True)
+    os.makedirs(static_dir, exist_ok=True)
+
+    # Loop through all items in the source directory
+    for item in os.listdir(source_dir):
+        source_item = os.path.join(source_dir, item)
+        
+        # If the item is a file and ends with .html, move it to the templates directory
+        if os.path.isfile(source_item) and item.endswith('.css'):
+            shutil.copy(source_item, os.path.join(templates_dir, item))
+        
+        # If the item is a directory, move it to the static directory
+        elif os.path.isdir(source_item):
+            shutil.copytree(source_item, os.path.join(static_dir, item))
+
+def replace_file(old_file_path, new_file_path):
+    """
+    Deletes the old file and replaces it with the new file.
+    
+    Args:
+        old_file_path (str): The path to the old file to be deleted.
+        new_file_path (str): The path to the new file to replace the old file.
+    """
+    # Check if the old file exists
+    if os.path.exists(old_file_path):
+        # Delete the old file
+        os.remove(old_file_path)
+        print(f"Deleted the old file: {old_file_path}")
+    else:
+        print(f"The old file does not exist: {old_file_path}")
+    
+    # Copy the new file to the location of the old file
+    shutil.copy(new_file_path, old_file_path)
+    print(f"Replaced with the new file: {new_file_path}")
+
+def add_home_view(views_file_path):
+    home_view_code = """
+from django.shortcuts import render
+from django.apps import apps
+from django.core.exceptions import AppRegistryNotReady
+
+# Define apps to exclude from being treated as sellable models
+EXCLUDED_APPS = ['auth']
+
+def is_sellable_model(model):
+    sellable_criteria = [
+        'name', 'title', 'product_name', 'item_name', 'label',
+        'price', 'cost', 'amount', 'value', 'pricing', 'rate', 'charge',
+        'description', 'details', 'info', 'summary', 'overview', 'spec', 'specification',
+        'quantity', 'amount', 'count', 'number', 'volume', 'total', 'stock',
+        'size', 'dimension', 'length', 'width', 'height', 'measurements',
+        'weight', 'mass', 'heaviness', 'load', 'burden'
+    ]
+    
+    # Check if the model has any of the sellable criteria fields
+    if model._meta.app_label in EXCLUDED_APPS:
+        return False
+
+    fields = model._meta.get_fields()
+    for field in fields:
+        if field.name in sellable_criteria:
+            return True
+    
+    return False
+
+def get_tables_with_sellable_objects():
+    try:
+        models = apps.get_models()
+        sellable_models = []
+        for model in models:
+            if is_sellable_model(model):
+                sellable_models.append(model)
+        return sellable_models
+    except AppRegistryNotReady:
+        return []
+
+def get_sellable_objects():
+    sellable_models = get_tables_with_sellable_objects()
+    sellable_objects = []
+
+    sellable_criteria = [
+        'name', 'title', 'product_name', 'item_name', 'label',
+        'price', 'cost', 'amount', 'value', 'pricing', 'rate', 'charge',
+        'description', 'details', 'info', 'summary', 'overview', 'spec', 'specification',
+        'quantity', 'amount', 'count', 'number', 'volume', 'total', 'stock',
+        'size', 'dimension', 'length', 'width', 'height', 'measurements',
+        'weight', 'mass', 'heaviness', 'load', 'burden'
+    ]
+
+    for model in sellable_models:
+        # Skip the Permission model explicitly
+        if model._meta.model_name == 'Permission':
+            continue
+        
+        objects = model.objects.all()
+        for obj in objects:
+            obj_data = {'model_name': model.__name__}
+            for field in model._meta.get_fields():
+                if field.name in sellable_criteria:
+                    obj_data[field.name] = getattr(obj, field.name, '')
+            sellable_objects.append(obj_data)
+
+    return sellable_objects
+
+def home(request):
+    sellable_objects = get_sellable_objects()
+    
+    # Debug statements to print sellable_objects
+    print("Sellable Objects:")
+    for obj in sellable_objects:
+        print(obj)
+
+    context = {
+        'sellable_objects': sellable_objects,
+    }
+    return render(request, 'home.html', context)
+
+"""
+
+    with open(views_file_path, 'r+') as file:
+        content = file.read()
+        
+        if 'def home(request):' not in content:
+            file.write(home_view_code)
+      
+
+
+
+def move_files_and_folders(source_dir, templates_dir, static_dir, file_extension):
+
+    # Create target directories if they don't exist
+    os.makedirs(templates_dir, exist_ok=True)
+    os.makedirs(static_dir, exist_ok=True)
+
+    # Loop through all items in the source directory
+    for item in os.listdir(source_dir):
+        source_item = os.path.join(source_dir, item)
+        
+        # If the item is a file and ends with the specified file extension, move it to the templates directory
+        if os.path.isfile(source_item) and item.endswith(file_extension):
+            shutil.copy(source_item, os.path.join(templates_dir, item))
+            print(f"Copied {item} to {templates_dir}")
+        
+        # If the item is a directory, move it to the static directory
+        elif os.path.isdir(source_item):
+            destination_dir = os.path.join(static_dir, item)
+            shutil.copytree(source_item, destination_dir)
+            print(f"Copied directory {item} to {static_dir}")
+
+

@@ -12,10 +12,10 @@ def get_entities(description):
     entities_snake_case,attributes_snake_case=predict_entities_and_attributes(description)
     attributes_final=list(set(attributes_snake_case))
     
-    ent_array,attributes_final = enhance_entities(description, entities_snake_case, attributes_final)
-
-    ent_array_sing = [plural_to_singular(ent) for ent in ent_array]
+    ent_array_sing = [plural_to_singular(ent) for ent in entities_snake_case]
     ent_array=list(set(ent_array_sing))
+    ent_array,attributes_final = enhance_entities(description, ent_array, attributes_final)
+
 
     return ent_array
 

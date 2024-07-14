@@ -17,8 +17,10 @@
     "@mui/material": "^5.16.0",
     "axios": "^1.7.2",
     "body-parser": "^1.20.2",
+    "child_process": "^1.0.2",
     "cors": "^2.8.5",
     "express": "^4.19.2",
-    "nodemon": "^3.1.4"
+    "nodemon": "^3.1.4",
+    "uuid": "^10.0.0"
   }
 }

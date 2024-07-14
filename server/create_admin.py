@@ -14,7 +14,6 @@ if __name__ == "__main__":
     # Ensure relationships are tuples
     relationships = [tuple(relationship) for relationship in relationships]
 
-    # Call the function to create database tables
     create_database_tables(entities_with_attr, entities_with_pks, relationships)
     create_django_project()
 

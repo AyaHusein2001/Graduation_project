@@ -125,18 +125,39 @@ app.post('/process-data', (req, res) => {
   });
 });
 
-app.post('/process-elements', (req, res) => {
-  const { elements } = req.body;
-  const pythonProcess = spawn('python', ['process_elements.py', JSON.stringify(elements)]);
+// app.post('/process-elements', (req, res) => {
+//   const { elements } = req.body;
+//   const pythonProcess = spawn('python', ['process_elements.py', JSON.stringify(elements)]);
+
+//   pythonProcess.stdout.on('data', (data) => {
+//     const result = JSON.parse(data.toString());
+//     res.json(result);
+//   });
+
+//   pythonProcess.stderr.on('data', (data) => {
+//     console.error(`stderr: ${data}`);
+//     res.status(500).send('Error processing elements');
+//   });
+// });
+
+app.post('/get-temp', (req, res) => {
+  const { description, color } = req.body;
+  console.log(description)
+  console.log(color)
+
+  const pythonProcess = spawn('python', ['frontend.py', JSON.stringify({ description, color })]);
 
   pythonProcess.stdout.on('data', (data) => {
-    const result = JSON.parse(data.toString());
-    res.json(result);
+      console.log(`Python script stdout: ${data}`);
   });
 
   pythonProcess.stderr.on('data', (data) => {
-    console.error(`stderr: ${data}`);
-    res.status(500).send('Error processing elements');
+      console.error(`Python script stderr: ${data}`);
+  });
+
+  pythonProcess.on('close', (code) => {
+      console.log(`Python script process exited with code ${code}`);
+      res.json({ message: 'Template saved successfully.' });
   });
 });
 

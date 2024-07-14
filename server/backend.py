@@ -19,6 +19,7 @@ from util import (
     remove_third_element_and_convert_to_set,
     predict_entities_and_attributes,
     extract_top_attributes,
+    update_entities_with_pks
 )
 def get_database(description,entities_snake_case): 
 
@@ -74,7 +75,8 @@ def get_database(description,entities_snake_case):
 
     entities_with_pks,entities_with_attr=get_primary_keys(doc,entities_with_attr,entity_attributes_map)
 
-    merge_db_attr_with_text_attr(entity_attributes_map,entities_with_attr)
+    merge_db_attr_with_text_attr(entity_attributes_map,entities_with_attr,ent_array)
+    entities_with_pks,entities_with_attr = update_entities_with_pks(entities_with_attr, entities_with_pks)
 
     updated_relations = process_relations(relationships)
 

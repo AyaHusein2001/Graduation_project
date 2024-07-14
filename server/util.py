@@ -27,59 +27,40 @@ def predict_entities_and_attributes(description):
     tokenizer = joblib.load('tokenizer.pkl')
     max_length = joblib.load('max_length.pkl')
 
-    # Define label mapping
-    label_map = {
-        '0': 0,
-        '1b': 1,
-        '1i': 2,
-        '2b': 3,
-        '2i': 4
-    }
 
     # Define the input string
-    input_arr = []
-    input_string = description.replace(',', ' and ')
-    input_string = input_string.replace('\n', ' ')
-    input_arr = input_string.split('.')
-
-    # Initialize arrays for entities and attributes
+    input_arr=[]
+    input_string = re.sub(r'[*\(\)\]\[]', ' ', description)
+    input_string=input_string.replace(',',' and ').replace(':',' and ').replace('-',' ').replace('_',' ')
+    input_string=input_string.replace('\n',' ')
+    input_arr=input_string.split('.')
     entities_snake_case = []
     attributes_snake_case = []
-
     model = load_model('lstm_model.h5', custom_objects={'custom_loss_': custom_loss_})
-
     for sentence in input_arr:
-        input_string = re.sub(r'\s+', ' ', sentence.strip())
-
-        # Convert input string to lower case and split into words
+            
+        input_string = re.sub(r'\s+', ' ', sentence)
         original_words = input_string.lower().strip().split()
-
-        # Tokenize and pad sequences for the input string
         input_sequence = tokenizer.texts_to_sequences([input_string])
         X_input = pad_sequences(input_sequence, maxlen=max_length, padding='post')
-
         # Predict labels for the input string
         y_pred = model.predict(X_input)
         y_pred_classes = np.argmax(y_pred, axis=-1).flatten()
-
-        # Retrieve predicted labels
         predicted_labels = y_pred_classes.tolist()
 
-        # Map token indices back to words
         index_word = {v: k for k, v in tokenizer.word_index.items()}
-
-        # Flatten the input sequence
         input_sequence_flat = input_sequence[0]
-
-        # Iterate through the predicted labels to construct entities_snake_case and attributes_snake_case arrays
         i = 0
         while i < len(input_sequence_flat):
             label = predicted_labels[i]
             word = original_words[i] if input_sequence_flat[i] == 0 else index_word.get(input_sequence_flat[i], original_words[i])  # Current word
-
+            if word=='<OOV>':
+                word=original_words[i]
             if label == 1:  # Entity label
                 if i + 1 < len(input_sequence_flat) and predicted_labels[i + 1] == 2:
                     next_word = original_words[i + 1] if input_sequence_flat[i + 1] == 0 else index_word.get(input_sequence_flat[i + 1], original_words[i + 1])
+                    if next_word=='<OOV>':
+                        next_word=original_words[i+1]
                     entities_snake_case.append(f"{word}_{next_word}")
                     i += 2  # Skip the next word as it's already processed
                 else:
@@ -88,6 +69,8 @@ def predict_entities_and_attributes(description):
             elif label == 3:  # Attribute label
                 if i + 1 < len(input_sequence_flat) and predicted_labels[i + 1] == 4:
                     next_word = original_words[i + 1] if input_sequence_flat[i + 1] == 0 else index_word.get(input_sequence_flat[i + 1], original_words[i + 1])
+                    if next_word=='<OOV>':
+                        next_word=original_words[i+1]
                     attributes_snake_case.append(f"{word}_{next_word}")
                     i += 2  # Skip the next word as it's already processed
                 else:
@@ -95,8 +78,8 @@ def predict_entities_and_attributes(description):
                     i += 1
             else:
                 i += 1
+    return entities_snake_case,attributes_snake_case
 
-    return entities_snake_case, attributes_snake_case
 
 # ////////////////////////////////////////////////////////////////////////////
 
@@ -166,25 +149,28 @@ def enhance_entities(text, entities, attributes):
         with open(file_path, 'r') as file:
             for line in file:
                 word = line.strip()
-                if word:  # Only add non-empty words
+                if word:  
                     words.append(word.lower())
         return words
 
-    # Example usage
-    file_path = 'words_list.txt'  # Replace with your file path
+ 
+    file_path = 'words_list.txt'  
     words_array = read_words_to_array(file_path)
     # print(words_array)
 
     for sentence in doc.sentences:
         for word in sentence.words:
-            if word.upos == 'VERB' or word.xpos == 'VBN':
+            # if word.upos == 'VERB' or word.xpos == 'VBN':
+            if (word.upos == 'VERB' and word.xpos == 'VBN') : 
+                   continue
+            if (word.upos == 'VERB' or word.xpos == 'VBN') :
                 verbs.append(word.text)
-            if word.text.endswith('ing'):
+            if word.text.endswith('ing') and word.upos != 'NOUN':
                 ing_words.append(word.text)
-
     
     # Combine verbs and ing words
     combined_set = verbs+ing_words+words_array
+    # print('combined_set: ',combined_set)
     filtered_entities=[]
     for entity in entities :
         if entity not in combined_set and '_' not in entity:
@@ -195,6 +181,7 @@ def enhance_entities(text, entities, attributes):
             if np.all(mask):
                 filtered_entities.append(entity)
             else:
+                # print(entity_arr)
                 ent_string=''
                 for ent in entity_arr:
                     if ent not in combined_set :
@@ -207,21 +194,23 @@ def enhance_entities(text, entities, attributes):
 
     filtered_attributes=[]
     for attribute in attributes :
+        # print(attribute)
         if attribute not in combined_set and '_' not in attribute:
            filtered_attributes.append(attribute) 
         elif '_' in attribute:
+            # print("aya: ",attribute)
             attribute_arr=attribute.split('_')
-            
-
             mask = np.isin(attribute_arr, combined_set,invert=True)
+            # print(mask)
             if np.all(mask):
+                # print("nada:",attribute)
                 filtered_attributes.append(attribute)
             else:
+                # print(attribute_arr)
                 attr_string=''
                 for attr in attribute_arr:
                     if attr not in combined_set :
                     #   print(attr)
-                      
                       if attr_string=='':
                          attr_string+=attr  
                       else:  
@@ -233,11 +222,12 @@ def enhance_entities(text, entities, attributes):
     modified_attributes = [attr.replace('’s','').replace("'s","").replace("'","")  for attr in filtered_attributes if plural_to_singular(attr) not in filtered_entities2]
     final_ent=list(set(filtered_entities2))
     final_attr=list(set(modified_attributes))
-       
+
+
+    
     return final_ent,final_attr
 
 def process_string(doc, entities, attributes):
-    # Prepare a list to store processed tokens
     processed_tokens = []
     # print(attributes)
     # print(entities)
@@ -266,10 +256,12 @@ def process_string(doc, entities, attributes):
                 head_index = word.head - 1
                 if head_index < len(sentence.words):
                     head_word = sentence.words[head_index]
-                    # Merge the compound words with an underscore
                     merged_compound = word.text + '_' + head_word.text
+                    # print(merged_compound)
+                    # print(attributes)
                     if (plural_to_singular(merged_compound) in entities and word.deprel == 'compound') or merged_compound in attributes:
                         # print("aya")
+                        # print(merged_compound)
                         processed_tokens.append(merged_compound)
                     else:
                         processed_tokens.append(word.text)
@@ -285,21 +277,11 @@ def process_string(doc, entities, attributes):
                       processed_tokens.append('\n')
                 elif word.id == 1:
                   processed_tokens.append(word.text)
-    
-
-                
-    
-    # Join the processed tokens into a single string
     result_string = ' '.join(processed_tokens)
-
-    
-
-    # print(result_string)
-
-    # Apply NLP processing using Stanza
     processed_doc = nlp(result_string)
     
     return processed_doc
+    
 
 def get_rid_of(doc,entities):
 # Iterate over each sentence in the document
@@ -320,19 +302,21 @@ def get_rid_of(doc,entities):
                     #   print(word.text)
 
 def extract_relationships(doc, entities):
-    # Process the text with Stanza
+
     all_sentences_relationships = []
     all_jj=['a','an','one','1','each','every','many','any','all','more','multiple','some','single']
     one_jj=['a','an','one','1','each','every','any','single']
     many_jj=['many','some','all','more','multiple']
+
     for sentence in doc.sentences:
         relationships=set()
+
         token_id_to_entity = map_entities_to_tokens(sentence, entities)
-        # print(token_id_to_entity)
+
         last_det_or_adj=''
         last_det_or_adj_head=-1
         for word in sentence.words:
-            # print(word)
+
             E1_cardinality=''
             if word.text in all_jj:
                 last_det_or_adj = word.text
@@ -420,6 +404,7 @@ def extract_relationships(doc, entities):
                                         E2_cardinality = 'many'
                                     else : E2_cardinality=''
                                 relationships.add(( E2_cardinality,plural_to_singular(E2), child.id,E1_cardinality, plural_to_singular(E1),'16'))
+
                 # Apply TDR18
                 if word.deprel == 'nsubj' and word.head > 0:
                     head_word = sentence.words[word.head - 1]
@@ -513,7 +498,6 @@ def extract_relationships(doc, entities):
                                 sentence_cases[last_case]=last_case_head
                                 # print(sentence_cases.items())
                             if child.head == word.head and child.deprel in ["nmod","obl","acl"] and child.id in token_id_to_entity:
-                                # to is aftkasaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
                                 for mod in {'in', 'for', 'on','to'}: 
                                   if mod in sentence_cases.keys() and child.id == sentence_cases[mod]:
                                     E2 = child.text
@@ -550,7 +534,6 @@ def extract_relationships(doc, entities):
                                         elif  last_det_or_adj_E2 in many_jj and last_det_or_adj_head_E2 == child.id:
                                             E2_cardinality = 'many'
                                     relationships.add((E1_cardinality,plural_to_singular(E1), child.id, E2_cardinality, plural_to_singular(E2),'23'))
-            # our iftekasa
                 if word.deprel == 'conj' and word.head > 0:
                     head_word = sentence.words[word.head - 1]
                     head_of_head = sentence.words[head_word.head-1]
@@ -563,7 +546,6 @@ def extract_relationships(doc, entities):
 
                         for child in sentence.words:
 
-                            # edit: 34an nw2fo 3nd al f3l w mi3ml4 3laqa bin mcln student , section in the issue below
                             if child.id == head_of_head.id :
                                 break
 
@@ -609,6 +591,8 @@ def extract_relationships(doc, entities):
     return all_sentences_relationships
 
 def associate_entities_attr(doc, entities, attributes, all_sentences_relations, entity_attributes_map):
+    # print(entities)
+    # print(attributes)
     current_entity = None
     entities_with_attr = defaultdict(list)
     for index, sentence in zip(range(len(doc.sentences)), doc.sentences):
@@ -627,70 +611,53 @@ def associate_entities_attr(doc, entities, attributes, all_sentences_relations, 
                                sentence_words.append(word.text)
         # print(sentence_words)# products !
 
-        for each_word in sentence_words:
-            each_word=plural_to_singular(each_word)
+        for in_each_word in sentence_words:
+            each_word=plural_to_singular(in_each_word)
             if each_word in entities:
                 current_entity = each_word
-            elif each_word in attributes:
+
+            elif in_each_word in attributes:
                 if current_entity is not None:
-                    if each_word not in entities_with_attr[current_entity]:
-                        entities_with_attr[current_entity].append(each_word)
+                    if in_each_word not in entities_with_attr[current_entity]:
+                        entities_with_attr[current_entity].append(in_each_word)
                     
     return entities_with_attr
 
+# extract primary keys of entities (original never remove) after association entitites with attributes
 def get_primary_keys(doc,entities_with_attr,entity_attributes_map):
     # step1 : extact the primary key from text
     primary_keys = {entity: '' for entity in entities_with_attr.keys()}
-    # first check it in the text 
     for sentence in doc.sentences:
-        # Map token ids to entities
-        # print(sentence)
-        # print(entities_with_attr.keys())
         token_id_to_entity = map_entities_to_tokens(sentence, entities_with_attr.keys())
-        # print(token_id_to_entity)
         for word in sentence.words:
             if word.text == 'primary_key':
-                # print("nada")
                 for child in sentence.words:
                                 if child.id in token_id_to_entity :
-                                #   print("aaa")
                                   primary_keys[child.text]=sentence.words[word.id].text
     # Step 2: For each empty primary key, assign attributes based on priority
     for entity in primary_keys:
         if primary_keys[entity] == '':
 
-            # Priority list of attributes
             priority_attributes = ['id', 'num', 'number', 'name', entity]
-            # also give higher priorities for the attributes that comes from text
-            # Iterate over the priority list
             for priority_attr in priority_attributes:
-                # Iterate over each attribute to check if it matches the current priority attribute
                 for attribute in entities_with_attr[entity]:
                     if priority_attr in attribute and entity in entity_attributes_map :
-                        # If an attribute matches the current priority, add it to the result dictionary
                         primary_keys[entity] = attribute
-                        break  # Stop searching after finding the first matching attribute
+                        break  
                 if primary_keys[entity] != '':
-                    break  # Stop searching if the primary key is already set
+                    break  
 
             # print(primary_keys[entity])
             if primary_keys[entity] == '':
-                # Priority list of attributes
                 priority_attributes = ['id', 'num', 'number', 'name', entity]
-                
-                # Iterate over the priority list
                 for priority_attr in priority_attributes:
-                    # Iterate over each attribute to check if it matches the current priority attribute
                     if entity in entity_attributes_map:
                         for attribute in  entity_attributes_map[entity]:
                             if priority_attr in attribute:
-                                # If an attribute matches the current priority, add it to the result dictionary
                                 primary_keys[entity] = attribute
-                                break  # Stop searching after finding the first matching attribute
+                                break  
                         if primary_keys[entity] != '':
-                            break  # Stop searching if the primary key is already set
-
-    # print(primary_keys)
+                            break 
     # step3 : search in database if it is not found any id in the attr 
     for entity in primary_keys:
         if primary_keys[entity]=='':
@@ -699,32 +666,39 @@ def get_primary_keys(doc,entities_with_attr,entity_attributes_map):
                     primary_keys_db = primary_keys_list[0].split(',')
                     for pk in  primary_keys_db:
                         if any(sub_pk in pk for sub_pk in ['id','num','number','name',entity]):
-                            # If an attribute contains 'id', add it to the result dictionary
                             primary_keys[entity] = pk
-                            break  # Stop searching after finding the first 'id' attribute
+                            break  
                     if primary_keys[entity]=='':
                           primary_keys[entity]=primary_keys_db[0]
-    # print(primary_keys)
     # step4 : put the pk if it is still '' by entity_id
     for entity in primary_keys:
         if primary_keys[entity]=='':
-                    # edit : removed entity from it :entity + '_id'
                     primary_keys[entity]='_id'
-    # print(primary_keys) 
     for entity in entities_with_attr:
          if primary_keys[entity] not in entities_with_attr[entity]:
               entities_with_attr[entity].append(primary_keys[entity])
     return primary_keys,entities_with_attr
 
-def merge_db_attr_with_text_attr(entity_attributes_map,entities_with_attr):
+def merge_db_attr_with_text_attr(entity_attributes_map,entities_with_attr,ent_array):
    for current_entity in entity_attributes_map:
         if current_entity in entities_with_attr:
          for attr in entity_attributes_map[current_entity]:
-            if attr not in entities_with_attr[current_entity]:
+            if attr not in entities_with_attr[current_entity] and attr not in ent_array:
                 entities_with_attr[current_entity].append(attr)
         else:
            entities_with_attr[current_entity]=entity_attributes_map[current_entity]
 
+def update_entities_with_pks(entities_with_attr, entities_with_pks):
+    modified_entities_with_pks = entities_with_pks.copy()  # Create a copy to avoid modifying the original
+
+    for key in entities_with_attr:
+        if key not in modified_entities_with_pks:
+            modified_entities_with_pks[key] = '_id'
+            if '_id' not in entities_with_attr[key]:
+                entities_with_attr[key].append('_id')
+                
+
+    return modified_entities_with_pks,entities_with_attr
 
 def process_relations(relations):
     updated_all_sentences_relations=[]
@@ -953,8 +927,8 @@ print('Superuser creation script executed.')
 
 def register_models_in_admin():
     """Register all models in models.py with the Django admin site."""
-    admin_file_path = os.path.join("library", "admin.py")
-    models_file_path = os.path.join("library", "models.py")
+    admin_file_path = os.path.join("myapp", "admin.py")
+    models_file_path = os.path.join("myapp", "models.py")
 
     with open(models_file_path, "r") as models_file:
         models_content = models_file.read()
@@ -987,146 +961,219 @@ def remove_meta_classes(file_path):
         file.write(new_content)
 
 def create_database_tables(entities_with_attr, entities_with_pks, relationships):
+
+    with open('reserved_word.txt') as f:
+        reserved_words = set(f.read().splitlines())
+    def append_s_if_reserved(word):
+        return word + 's' if word.upper() in reserved_words else word
+    print(entities_with_pks)
+    modified_entities_with_pks = {append_s_if_reserved(key): value for key, value in entities_with_pks.items()}
+
+    modified_entities_with_attr = {append_s_if_reserved(key): value for key, value in entities_with_attr.items()}
+
+    modified_relationships = [
+        (rel[0], append_s_if_reserved(rel[1]), rel[2], append_s_if_reserved(rel[3]), rel[4], rel[5])
+        for rel in relationships
+    ]
+    print(modified_entities_with_pks)
+    print(modified_entities_with_attr)
+    print(modified_relationships)
     sql_commands = []
-    unique_tables = []
-
-    # Iterate through entities and their attributes to generate SQL commands
-    for entity, attrs in entities_with_attr.items():
-        primary_key = entities_with_pks[entity]
-        new_attrs = []
-
-        # Check for relationships to add foreign keys
-        for relationship in relationships:
-            card1, entity1, card2, entity2, pk1, pk2 = relationship
+    unique_tables=[]
+    for entity, attrs in modified_entities_with_attr.items():
+        primary_key = modified_entities_with_pks[entity]
+        new_attrs=[]
+        for relationship in modified_relationships:
+            card1, entity1,card2, entity2, pk1, pk2 = relationship
             if card1 == 'many' and entity == entity1 and card2 == '1':
-                if f'{entity2}__{pk2}' not in attrs:
-                    new_attrs.append(f'{entity2}__{pk2}')
+                    if f'{entity2}__{pk2}' not in attrs:
+                        new_attrs.append(f'{entity2}__{pk2}')
             elif card2 == 'many' and entity == entity2 and card1 == '1':
-                if f'{entity1}__{pk1}' not in attrs:
-                    new_attrs.append(f'{entity1}__{pk1}')
-
-        # Construct SQL for attributes
+                    if f'{entity1}__{pk1}' not in attrs:
+                        new_attrs.append(f'{entity1}__{pk1}')
         attrs_sql_1 = ", ".join([f"{attr} TEXT NOT NULL" if attr == primary_key else f"{attr} TEXT" for attr in attrs])
         attrs_sql_2 = ", ".join([f"{attr} TEXT NOT NULL" for attr in new_attrs])
-        if attrs_sql_2 != '':
-            attrs_sql = attrs_sql_1 + ',' + attrs_sql_2
+        if attrs_sql_2!='':
+            attrs_sql = attrs_sql_1 +','+attrs_sql_2
         else:
-            attrs_sql = attrs_sql_1
-
-        # Create table SQL statement
+            attrs_sql = attrs_sql_1 
         if entity not in unique_tables:
             sql = f"CREATE TABLE IF NOT EXISTS {entity} ({attrs_sql}, PRIMARY KEY ({primary_key}));"
+
+        for relationship in modified_relationships:
+            card1, entity1, card2, entity2, pk1, pk2 = relationship
+            if card1 == 'many' and card2 == 'many':
+                pk_1 = f"{entity1}__{pk1}"
+                pk_2 = f"{entity2}__{pk2}"
+                table_name = f"{entity1}_{entity2}"
+                if table_name not in unique_tables:
+                    sql_many_many = f"CREATE TABLE IF NOT EXISTS {table_name} ({pk_1} TEXT NOT NULL, {pk_2} TEXT NOT NULL, PRIMARY KEY ({pk_1}, {pk_2}), FOREIGN KEY ({pk_1}) REFERENCES {entity1}({pk1}), FOREIGN KEY ({pk_2}) REFERENCES {entity2}({pk2}));"
+                    unique_tables.append(table_name)
+                    sql_commands.append(sql_many_many)
+            elif card1 == 'many' and entity == entity1 and card2 == '1':
+                pk_2 = f"{entity2}__{pk2}"
+                sql = sql.replace(');', f", FOREIGN KEY ({pk_2}) REFERENCES {entity2}({pk2}));")
+            elif card2 == 'many' and entity == entity2 and card1 == '1':
+                pk_1 = f"{entity1}__{pk1}"
+                sql = sql.replace(');', f", FOREIGN KEY ({pk_1}) REFERENCES {entity1}({pk1}));")
+        if entity not in unique_tables:
             unique_tables.append(entity)
-
-            # Handle relationships for many-to-many
-            for relationship in relationships:
-                card1, entity1, card2, entity2, pk1, pk2 = relationship
-                if card1 == 'many' and card2 == 'many':
-                    pk_1 = f"{entity1}__{pk1}"
-                    pk_2 = f"{entity2}__{pk2}"
-                    table_name = f"{entity1}_{entity2}"
-                    if table_name not in unique_tables:
-                        sql_many_many = f"CREATE TABLE IF NOT EXISTS {table_name} ({pk_1} TEXT NOT NULL, {pk_2} TEXT NOT NULL, PRIMARY KEY ({pk_1}, {pk_2}), FOREIGN KEY ({pk_1}) REFERENCES {entity1}({pk1}), FOREIGN KEY ({pk_2}) REFERENCES {entity2}({pk2}));"
-                        unique_tables.append(table_name)
-                        sql_commands.append(sql_many_many)
-                elif card1 == 'many' and entity == entity1 and card2 == '1':
-                    pk_2 = f"{entity2}__{pk2}"
-                    sql = sql.replace(');', f", FOREIGN KEY ({pk_2}) REFERENCES {entity2}({pk2}));")
-                elif card2 == 'many' and entity == entity2 and card1 == '1':
-                    pk_1 = f"{entity1}__{pk1}"
-                    sql = sql.replace(');', f", FOREIGN KEY ({pk_1}) REFERENCES {entity1}({pk1}));")
-
             sql_commands.append(sql)
-
-    # Connect to SQLite database
     conn = sqlite3.connect('_db.sqlite3')
     cursor = conn.cursor()
 
-    # Execute SQL commands to create tables
     for command in sql_commands:
+        print(command)
         cursor.execute(command)
-
-    # Commit changes and close connection
+        
     conn.commit()
     conn.close()
 
     print("Database and tables created successfully.")
 
+def process_file(input_file):
+    with open(input_file, 'r') as file:
+        lines = file.readlines()
+
+    output_lines = []
+    class_name = ""
+    fields = []
+    in_class = False
+    composite_primary_key_found = False
+
+    for i, line in enumerate(lines):
+        class_match = re.match(r'class (\w+)\(', line.strip())
+        if class_match:
+            if in_class and composite_primary_key_found:
+                output_lines.append(f"\n    class Meta:\n")
+                output_lines.append(f"        constraints = [\n")
+                field_names = ", ".join([f"'{f}'" for f in fields])
+                output_lines.append(f"            models.UniqueConstraint(\n")
+                output_lines.append(f"                fields=[{field_names}], name='{class_name}skey'\n")
+                output_lines.append(f"            )\n")
+                output_lines.append(f"        ]\n")
+            class_name = class_match.group(1)
+            in_class = True
+            fields = []
+            composite_primary_key_found = False
+
+        primary_key_match = re.search(r'(\w+) = .*primary_key=True', line)
+        composite_key_comment = re.search(r'The composite primary key \(([^,]+), ([^\)]+)\)', line)
+
+        if primary_key_match and composite_key_comment:
+            # Remove primary_key=True and set the flag
+            line = line.replace(", primary_key=True", "")
+            fields.append(primary_key_match.group(1))
+            next_line_match = re.search(r'(\w+) = ', lines[i + 1])
+            if next_line_match:
+                fields.append(next_line_match.group(1))
+            composite_primary_key_found = True
+        elif primary_key_match:
+            field_name = primary_key_match.group(1)
+            fields = [field_name]
+
+        output_lines.append(line)
+
+    if in_class and composite_primary_key_found:
+        output_lines.append(f"\n    class Meta:\n")
+        output_lines.append(f"        constraints = [\n")
+        field_names = ", ".join([f"'{f}'" for f in fields])
+        output_lines.append(f"            models.UniqueConstraint(\n")
+        output_lines.append(f"                fields=[{field_names}], name='{class_name}key'\n")
+        output_lines.append(f"            )\n")
+        output_lines.append(f"        ]\n")
+
+    with open(input_file, 'w') as file:
+        file.writelines(output_lines)
+
+def move_directory(src_dir, dest_dir):
+    try:
+        # Check if the source directory exists
+        if not os.path.exists(src_dir):
+            print(f"Source directory '{src_dir}' does not exist.")
+            return
+        
+        # Check if the destination directory exists
+        if not os.path.exists(dest_dir):
+            print(f"Destination directory '{dest_dir}' does not exist. Creating it.")
+            os.makedirs(dest_dir)
+        
+        # Construct the final destination path
+        final_dest = os.path.join(dest_dir, os.path.basename(src_dir))
+        
+        # Move the directory
+        shutil.move(src_dir, final_dest)
+        
+        # print(f"Directory '{src_dir}' moved to '{final_dest}' successfully.")
+    except Exception as e:
+        print(f"Error: {e}")
+
 
 def create_django_project():
-    """Create a Django project and an app named 'library'."""
-    # Install Django
+    """Create a Django project and an app named 'myapp'."""
     run_command("pip install django")
     
-    # Start a new Django project named 'myproject'
     run_command("django-admin startproject myproject")
     
-    # Change directory to 'myproject'
     os.chdir("myproject")
     
-    # Start a new app named 'library'
-    run_command("python manage.py startapp library")
+    run_command("python manage.py startapp myapp")
     
-    # Add 'library' to INSTALLED_APPS in settings.py
     settings_path = os.path.join("myproject", "settings.py")
     with open(settings_path, "r") as file:
         settings_content = file.read()
     
     settings_content = settings_content.replace(
         "INSTALLED_APPS = [",
-        "INSTALLED_APPS = [\n    'library',"
+        "INSTALLED_APPS = [\n    'myapp',"
     )
     
     with open(settings_path, "w") as file:
         file.write(settings_content)
     
-    # Make migrations and migrate the database
     run_command("python manage.py makemigrations")
     run_command("python manage.py migrate")
     
-    # Create the superuser with specified credentials
-    create_superuser("aya", "aya@h.com", "malika")
+    create_superuser("a", "a@h.com", "1234")
 
-    # Save the credentials in a text file
     with open("superuser_credentials.txt", "w") as file:
         file.write("Username: admin\n")
         file.write("Email:a@h.com\n")
         file.write("Password:a\n")
     
-    # Rename original db.sqlite3 to wdb.sqlite3 if it exists
     if os.path.exists("db.sqlite3"):
         os.rename("db.sqlite3", "wdb.sqlite3")
     
-    # Rename ../../_db.sqlite3 to db.sqlite3 and move it inside myproject
     outer_db_path = os.path.abspath(os.path.join("../", "_db.sqlite3"))
     if os.path.exists(outer_db_path):
         new_db_path = os.path.join(os.getcwd(), "db.sqlite3")
         os.rename(outer_db_path, new_db_path)
     
-    # Run inspectdb command and save output to models.py
     run_command("python manage.py inspectdb > models.py")
     
-    # Overwrite library/models.py with the content of models.py
-    shutil.copyfile("models.py", os.path.join("library", "models.py"))
+    shutil.copyfile("models.py", os.path.join("myapp", "models.py"))
  
-    input_file = os.path.join("library", "models.py")
+    input_file = os.path.join("myapp", "models.py")
 
     remove_meta_classes(input_file)
+    process_file(input_file)
 
-    # Rename original db.sqlite3 to _db.sqlite3 if it exists
+
     if os.path.exists("db.sqlite3"):
         os.rename("db.sqlite3", "_db.sqlite3")
 
-    # Rename original wdb.sqlite3 to db.sqlite3 if it exists
     if os.path.exists("wdb.sqlite3"):
         os.rename("wdb.sqlite3", "db.sqlite3")
 
-    # Make migrations and migrate the database
     run_command("python manage.py makemigrations")
     run_command("python manage.py migrate")
     
     # Register all models in admin.py
     register_models_in_admin()
     
-    run_command("python manage.py runserver")
+    # run_command("python manage.py runserver")
+    os.chdir("..")
+    src_directory = "myproject"
+    dest_directory = "D:\GP\Website\Graduation_project"
+    move_directory(src_directory, dest_directory)
 

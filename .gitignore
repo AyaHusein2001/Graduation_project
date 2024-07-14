@@ -2,9 +2,17 @@
 
 # dependencies
 /node_modules
+topic0_food
+topic1_hotel
+topic2_courses
 /.pnp
 .pnp.js
-
+templates
+static
+admin
+custom_admin
+myproject
+*.ipynb
 # testing
 /coverage
 
@@ -27,3 +35,7 @@ yarn-error.log*
 *.csv
 *.jpg
 *.png
+*.zip
+*.rar
+*.gz
+*.bin

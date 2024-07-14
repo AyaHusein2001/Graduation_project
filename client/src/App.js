@@ -31,7 +31,7 @@ import headerImage from './assets/headerImage.png';
 const theme = createTheme({
     palette: {
     primary: {
-      main: "#FFC683",
+      main: "#FFAC35",
     },
     secondary: {
       main: "#2A3547",
@@ -42,7 +42,7 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           '&:before': {
-            borderBottomColor: '#FFC683', // Change the underline color before focus
+            borderBottomColor: '#FFAC35', // Change the underline color before focus
           },
           '&:hover:not(.Mui-disabled):before': {
             borderBottomColor: '#FFFFFF', // Change the underline color on hover
@@ -59,7 +59,7 @@ const theme = createTheme({
     MuiInputLabel: {
       styleOverrides: {
         root: {
-          color: '#FFC683', // Change the label color
+          color: '#FFAC35', // Change the label color
         },
         focused: {
           color: '#FFFFFF', // Change the label color when focused
@@ -73,7 +73,7 @@ export default function FormDialog() {
   const [openDialog, setOpenDialog] = useState(false);
   const [showEntsOnly, setShowEntsOnly] = useState(true);
   const [showColorPicker, setShowColorPicker] = useState(false);
-
+  const [guiDescription, setGUIDescription] = useState('');
   const [databaseDescription, setDatabaseDescription] = useState("");
   const [result, setResult] = useState([]);
   const [error, setError] = useState(false);
@@ -119,7 +119,8 @@ export default function FormDialog() {
   const handleSubmit = async (e) => {
     setOpenDialog(true);
     e.preventDefault();
-
+    
+    
     if (!databaseDescription.trim()) {
       setError(true);
       return;
@@ -142,6 +143,10 @@ export default function FormDialog() {
       console.error("There was an error processing the text!", error);
       setError(true);
     }
+
+
+
+
   };
 
   const handleAddElement = () => {
@@ -187,7 +192,6 @@ export default function FormDialog() {
       console.error("There was an error processing the data!", error);
     }
   };
-
   const handleSave = async () => {
     try {
       const relationshipsAsTuples = relationships.map((arr) => [
@@ -201,18 +205,106 @@ export default function FormDialog() {
       console.log(entitiesWithAttr);
       console.log(entitiesWithPKs);
       console.log(relationshipsAsTuples);
-
-      axios.post("save", {
+        // Only execute these lines after the first request is completed
+        setOpenDialog(false); // Close the dialog after saving
+        setShowEntsOnly(true);
+      // Await the axios post request
+      await axios.post("save", {
         entitiesWithAttr,
         entitiesWithPKs,
         relationships: relationshipsAsTuples,
       });
-      setOpenDialog(false); // Close the dialog after saving
-      setShowEntsOnly(true);
+      
+
     } catch (error) {
       console.error("Error saving data:", error);
     }
+  
+    if (!guiDescription.trim()) {
+      setError(true);
+      return;
+    }
+    if (!selectedColor) {
+      setError(true);
+      return;
+    }
+  
+    try {
+      console.log(guiDescription);
+      console.log(selectedColor);
+  
+      const response = await fetch("get-temp", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ description: guiDescription, color: selectedColor }),
+      });
+  
+      console.log(response);
+  
+      setError(false);
+    } catch (error) {
+      console.error("There was an error processing the text!", error);
+      setError(true);
+    }
   };
+  
+  // const handleSave = async () => {
+  //   try {
+  //     const relationshipsAsTuples = relationships.map((arr) => [
+  //       arr[0],
+  //       arr[1],
+  //       arr[2],
+  //       arr[3],
+  //       arr[4],
+  //       arr[5],
+  //     ]);
+  //     console.log(entitiesWithAttr);
+  //     console.log(entitiesWithPKs);
+  //     console.log(relationshipsAsTuples);
+
+  //     axios.post("save", {
+  //       entitiesWithAttr,
+  //       entitiesWithPKs,
+  //       relationships: relationshipsAsTuples,
+  //     });
+  //     setOpenDialog(false); // Close the dialog after saving
+  //     setShowEntsOnly(true);
+  //   } catch (error) {
+  //     console.error("Error saving data:", error);
+  //   }
+
+  //   if (!guiDescription.trim()) {
+  //     setError(true);
+  //     return;
+  //   }
+  //   if (!selectedColor) {
+  //     setError(true);
+  //     return;
+  //   }
+  //   try {
+  //     console.log(guiDescription)
+  //     console.log(selectedColor)
+
+  //     const response = await fetch("get-temp", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({ description: guiDescription, color: selectedColor }),
+  //     });
+
+     
+  //     console.log(response)
+
+  //     setError(false);
+  //   } catch (error) {
+  //     console.error("There was an error processing the text!", error);
+  //     setError(true);
+  //   }
+   
+  // };
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
@@ -233,35 +325,6 @@ export default function FormDialog() {
     setShowColorPicker((prevShowColorPicker) => !prevShowColorPicker);
   };
 
-  // const divStyle = {
-  //   backgroundImage: `url(${backgroundImage})`,
-  //   backgroundSize: "cover",
-  //   backgroundRepeat: "no-repeat",
-  //   backgroundPosition: "center",
-  //   height: "100vh",
-  //   // overflow: 'hidden',
-  //   display: "flex",
-  //   flexDirection: "column",
-  //   alignItems: "flex-start",
-  //   justifyContent: "center",
-  //   gap: "20px", // Adjust the gap as needed
-  //   "padding-left": "200px",
-  // };
-  // const divStyle = {
-  //   backgroundImage: `url(${backgroundImage})`,
-  //   backgroundSize: 'cover',
-    
-  //   backgroundRepeat: 'no-repeat',
-  //   // backgroundPosition: 'center',
-  //   // height: '150vh',
-  //   // width: '100vw', // Make sure it covers the entire viewport width
-  //   display: 'flex',
-  //   flexDirection: 'column',
-  //   alignItems: 'flex-start',
-  //   justifyContent: 'center',
-  //   gap: '20px', // Adjust the gap as needed
-  //   paddingLeft: '200px', // Use camelCase for paddingLeft
-  // };
 
   const divStyle = {
     backgroundImage: `url(${backgroundImage})`,
@@ -320,6 +383,8 @@ export default function FormDialog() {
             multiline
             maxRows={10}
             sx={textFieldStyle}
+            value={guiDescription}
+            onChange={(e) => setGUIDescription(e.target.value)}
           />
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <Button color="primary" variant="contained" onClick={toggleColorPicker}>
