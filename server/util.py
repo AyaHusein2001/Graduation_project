@@ -18,17 +18,17 @@ import sqlite3
 from collections import defaultdict
 
 nlp = stanza.Pipeline('en', processors='tokenize,pos,lemma,depparse')
-# Load the CSV file into a DataFrame
+
 df = pd.read_csv('again_database.csv')
 
 # ////////////////////////// test this 3nd aya
 def predict_entities_and_attributes(description):
-    # Load tokenizer and max_length
+
     tokenizer = joblib.load('tokenizer.pkl')
     max_length = joblib.load('max_length.pkl')
 
 
-    # Define the input string
+    
     input_arr=[]
     input_string = re.sub(r'[*\(\)\]\[]', ' ', description)
     input_string=input_string.replace(',',' and ').replace(':',' and ').replace('-',' ').replace('_',' ')
@@ -43,7 +43,7 @@ def predict_entities_and_attributes(description):
         original_words = input_string.lower().strip().split()
         input_sequence = tokenizer.texts_to_sequences([input_string])
         X_input = pad_sequences(input_sequence, maxlen=max_length, padding='post')
-        # Predict labels for the input string
+        
         y_pred = model.predict(X_input)
         y_pred_classes = np.argmax(y_pred, axis=-1).flatten()
         predicted_labels = y_pred_classes.tolist()
@@ -56,13 +56,13 @@ def predict_entities_and_attributes(description):
             word = original_words[i] if input_sequence_flat[i] == 0 else index_word.get(input_sequence_flat[i], original_words[i])  # Current word
             if word=='<OOV>':
                 word=original_words[i]
-            if label == 1:  # Entity label
+            if label == 1:  
                 if i + 1 < len(input_sequence_flat) and predicted_labels[i + 1] == 2:
                     next_word = original_words[i + 1] if input_sequence_flat[i + 1] == 0 else index_word.get(input_sequence_flat[i + 1], original_words[i + 1])
                     if next_word=='<OOV>':
                         next_word=original_words[i+1]
                     entities_snake_case.append(f"{word}_{next_word}")
-                    i += 2  # Skip the next word as it's already processed
+                    i += 2  
                 else:
                     entities_snake_case.append(word)
                     i += 1
@@ -72,7 +72,7 @@ def predict_entities_and_attributes(description):
                     if next_word=='<OOV>':
                         next_word=original_words[i+1]
                     attributes_snake_case.append(f"{word}_{next_word}")
-                    i += 2  # Skip the next word as it's already processed
+                    i += 2  
                 else:
                     attributes_snake_case.append(word)
                     i += 1
@@ -84,34 +84,24 @@ def predict_entities_and_attributes(description):
 # ////////////////////////////////////////////////////////////////////////////
 
 def extract_top_attributes(ent_array):
-    # Filter the DataFrame to include only the entities in `ent_array`
     filtered_df = df[df['Entity'].isin(ent_array)]
 
-    # Initialize a dictionary to map entities to their top 10 important attributes
     entity_attributes_map = {}
 
     for index, row in filtered_df.iterrows():
         entity = row['Entity'].strip()
-        # Extract attributes and their importance values
         attributes_with_importance = row['Merged_Attributes'].strip().split(',')
         datatypes = row['Merged_Types'].strip().split(',')
-        # Parse the attributes and their importance values
         attributes_importance_list = []
         for attribute in attributes_with_importance:
-            # Split the attribute to separate the name and the importance value
             attribute_name, importance = attribute.split('|')
-            # Convert importance to an integer
             importance = int(importance)
-            # Append the tuple (attribute name, importance) to the list
             attributes_importance_list.append((attribute_name, importance))
         
-        # Sort attributes by importance in descending order and take the top 10
         top_10_attributes = sorted(attributes_importance_list, key=lambda x: x[1], reverse=True)[:10]
         
-        # Extract the attribute names from the sorted list
         top_10_attribute_names = [attribute[0] for attribute in top_10_attributes]
         
-        # Map the entity to its top 10 important attributes
         entity_attributes_map[entity] = top_10_attribute_names
     
     return entity_attributes_map
@@ -136,14 +126,11 @@ def map_entities_to_tokens(sentence, entities):
         return token_id_to_entity
 
 def enhance_entities(text, entities, attributes):
-    # Process the text
     doc = nlp(text)
     
-    # Extract verbs and words ending with 'ing'
     verbs = []
     ing_words = []
 
-    # Function to read words from a file and put them into an array
     def read_words_to_array(file_path):
         words = []
         with open(file_path, 'r') as file:
@@ -168,7 +155,6 @@ def enhance_entities(text, entities, attributes):
             if word.text.endswith('ing') and word.upos != 'NOUN':
                 ing_words.append(word.text)
     
-    # Combine verbs and ing words
     combined_set = verbs+ing_words+words_array
     # print('combined_set: ',combined_set)
     filtered_entities=[]
@@ -217,7 +203,6 @@ def enhance_entities(text, entities, attributes):
                         attr_string+='_'+attr  
                 if attr_string!='':
                     filtered_attributes.append(attr_string)
-    # Modify each attribute before checking
     filtered_entities2 = [plural_to_singular(entity).replace('’s','').replace("'s","").replace("'","") for entity in filtered_entities ]
     modified_attributes = [attr.replace('’s','').replace("'s","").replace("'","")  for attr in filtered_attributes if plural_to_singular(attr) not in filtered_entities2]
     final_ent=list(set(filtered_entities2))
@@ -268,7 +253,6 @@ def process_string(doc, entities, attributes):
                 else:
                     processed_tokens.append(word.text)
             else:
-                # Check if the previous word is not a compound
                 word_before =  sentence.words[word.id - 2]
                 merged_word= word_before.text +'_' + word.text
                 if word.id > 1 and ((word_before.deprel != 'compound' and merged_word not in attributes ) or( word_before.deprel != 'amod' and  plural_to_singular(merged_word) not in entities and merged_word not in attributes) ):
@@ -284,11 +268,8 @@ def process_string(doc, entities, attributes):
     
 
 def get_rid_of(doc,entities):
-# Iterate over each sentence in the document
     for sentence in doc.sentences:
-        # Map token ids to entities
-        # token_id_to_entity = map_entities_to_tokens(sentence, entities)
-        # print(token_id_to_entity)
+
         for word in sentence.words:
             # print(word)
             if word.text in ['which','that','who']:
@@ -742,7 +723,6 @@ def process_relations(relations):
                             updated_relation.append(foreign_keys_2_list[index])
                             updated_relations.append(tuple(updated_relation))
                             continue
-                # Default to 'many' for both if no conditions are met
                 updated_relation = list(relation)
                 if updated_relation[0]=='':
                  updated_relation[0] = 'many' 
@@ -762,10 +742,8 @@ def add_missing_fk(updated_relations,entities_with_pks):
         for relation in sentence_relation:
             
                 if len(relation) == 6:
-                    # print(relation)
                     first_elem, first_entity, _, fourth_elem, second_entity, _ = relation
                     if first_entity in entities_with_pks and second_entity in entities_with_pks :
-                        # print(relation)
                         if first_elem == 'many' and fourth_elem == 'many':
                        
                             modified_tuple = (
@@ -806,7 +784,6 @@ def find_and_merge_tuples(relations):
             
             t1, t2 = relations[i], relations[j]
             
-            # Check merge conditions
             if (t1[0] == '1' and t1[3] == 'many' and t2[0] == '1' and t2[3] == 'many' and 
                 t1[1] == t2[4] and t1[4] == t2[1]) or (t1[0] == '1' and t1[3] == 'many' and t2[0] == 'many' and t2[3] == '1' and 
                 t1[1] == t2[1] and t1[4] == t2[4]):
@@ -815,7 +792,6 @@ def find_and_merge_tuples(relations):
                 merged_set.add(i)
                 merged_set.add(j)
     
-    # Add non-merged tuples to the result
     for i in range(len(relations)):
         if i not in merged_set:
             merged_relations.append(relations[i])
@@ -836,7 +812,6 @@ def filtering(relations):
             t1, t2 = relations[i], relations[j]
             if t1 == t2 :
                 continue
-            # Check merge conditions
             if (((t1[0] == '1' and t1[3] == 'many') or (t1[0] == 'many' and t1[3] == '1') ) and t2[0] == 'many' and t2[3] == 'many' and 
                 t1[1] == t2[4] and t1[4] == t2[1]) or (((t1[0] == '1' and t1[3] == 'many') or(t1[0] == 'many' and t1[3] == '1')) and t2[0] == 'many' and t2[3] == 'many' and 
                 t1[1] == t2[1] and t1[4] == t2[4]):
@@ -844,7 +819,6 @@ def filtering(relations):
                 merged_set.add(i)
                 merged_set.add(j)
     
-    # Add non-merged tuples to the result
     for i in range(len(relations)):
         if i not in merged_set:
             merged_relations.append(relations[i])
@@ -865,13 +839,11 @@ def last_filtering(relations):
             t1, t2 = relations[i], relations[j]
             if t1 == t2 :
                 continue
-            # Check merge conditions
             if (t1[0] == t2[3] and t1[3] == t2[0] and t1[1] == t2[4] and t1[4] == t2[1]) or (t1[0] == t2[0] and t1[3] == t2[3] and t1[1] == t2[1] and t1[4] == t2[4]):
                 merged_relations.append(t1)
                 merged_set.add(i)
                 merged_set.add(j)
     
-    # Add non-merged tuples to the result
     for i in range(len(relations)):
         if i not in merged_set:
             merged_relations.append(relations[i])
@@ -880,16 +852,12 @@ def last_filtering(relations):
 
 
 def remove_third_element_and_convert_to_set(relationships):
-    # Create a list to hold the modified tuples
     modified_tuples = []
     
     for relationship in relationships:
-        # Remove the third element from the tuple
         modified_tuple = relationship[:2] + relationship[3:]
-        # Append the modified tuple to the list
         modified_tuples.append(modified_tuple)
     
-    # Convert the list of modified tuples to a set
     result_set = set(modified_tuples)
     
     return result_set
@@ -916,11 +884,9 @@ print('Superuser creation script executed.')
 """
     shell_command = "python manage.py shell"
     
-    # Open a subprocess to the Django shell and write the python_code to it line by line
     process = subprocess.Popen(shell_command, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     output, error = process.communicate(input=python_code)
 
-    # Print the output and error streams
     print("Output:\n", output)
     if error:
         print("Error:\n", error)
@@ -933,13 +899,10 @@ def register_models_in_admin():
     with open(models_file_path, "r") as models_file:
         models_content = models_file.read()
 
-    # Extract all model class names from models.py
     model_classes = re.findall(r'class (\w+)\(', models_content)
 
-    # Generate the admin registration lines
     admin_lines = "\n".join([f"admin.site.register({model_class})" for model_class in model_classes])
 
-    # Write the import and registration lines to admin.py
     with open(admin_file_path, "a") as admin_file:
         admin_file.write("\nfrom .models import *\n")
         admin_file.write(admin_lines)
@@ -948,13 +911,11 @@ def remove_meta_classes(file_path):
     with open(file_path, 'r') as file:
         content = file.read()
 
-    # Regex pattern to match class Meta blocks
     meta_class_pattern = re.compile(
         r'class Meta:\s*(\n\s+.*?)*?\n\s*(?=class|$)', 
         re.MULTILINE
     )
 
-    # Remove all matches of the pattern from the content
     new_content = re.sub(meta_class_pattern, '\n', content)
 
     with open(file_path, 'w') as file:
@@ -1061,7 +1022,6 @@ def process_file(input_file):
         composite_key_comment = re.search(r'The composite primary key \(([^,]+), ([^\)]+)\)', line)
 
         if primary_key_match and composite_key_comment:
-            # Remove primary_key=True and set the flag
             line = line.replace(", primary_key=True", "")
             fields.append(primary_key_match.group(1))
             next_line_match = re.search(r'(\w+) = ', lines[i + 1])
@@ -1088,23 +1048,20 @@ def process_file(input_file):
 
 def move_directory(src_dir, dest_dir):
     try:
-        # Check if the source directory exists
         if not os.path.exists(src_dir):
             print(f"Source directory '{src_dir}' does not exist.")
             return
         
-        # Check if the destination directory exists
+
         if not os.path.exists(dest_dir):
             print(f"Destination directory '{dest_dir}' does not exist. Creating it.")
             os.makedirs(dest_dir)
         
-        # Construct the final destination path
+
         final_dest = os.path.join(dest_dir, os.path.basename(src_dir))
-        
-        # Move the directory
+
         shutil.move(src_dir, final_dest)
-        
-        # print(f"Directory '{src_dir}' moved to '{final_dest}' successfully.")
+
     except Exception as e:
         print(f"Error: {e}")
 

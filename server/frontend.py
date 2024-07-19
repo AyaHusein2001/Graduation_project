@@ -7,23 +7,25 @@ def frontendfunction(description, color):
     data,label_to_folder =collect_all_data()
     arr_descs=[]
     arr_descs.append(description)
-    folders=classify(data,arr_descs,label_to_folder)
-    top_folder = top(folders,description)
-    trans(top_folder)
-    extracted_details = extract_details_advanced(description)
-    user_feedback = None  # Placeholder for actual feedback mechanism
-    updated_details = collect_feedback(description, extracted_details, user_feedback)
+    folder=classify(data,arr_descs,label_to_folder)
+    # top_folder = top(folders,description)
+    subfolder = "pages\\0"
+    updated_folder=os.path.join(folder[0], subfolder)
+    trans(updated_folder)
     html_file_path=paths("D:\GP\Website\Graduation_project\9")
-    readandwrite(html_file_path,updated_details)
     css_files = get_linked_css_files(html_file_path)
-    modifyallcss("D:\GP\Website\Graduation_project\9",css_files,color)
+    print("css_files",css_files)
+    modifyallcss("D:\\GP\\Website\\Graduation_project\\9",css_files,color)
+    arr2=[]
+    arr2.append("base.css")
+    modifyallcss('D:/GP/Website/Graduation_project/admin',arr2,color)
 
-    source_dir = 'D:\GP\Website\Graduation_project\9'
+    source_dir = 'D:\\GP\\Website\\Graduation_project\\9'
     templates_dir = 'D:/GP/Website/Graduation_project/myproject/myapp/templates'
     static_dir = 'D:/GP/Website/Graduation_project/myproject/myapp/static'
 
 
-    file_ext = '.html'  # Change this to '.css' or any other file extension as needed
+    file_ext = '.html'  
     if os.path.exists(templates_dir):
             shutil.rmtree(templates_dir)
             print(f"Deleted the existing templates directory: {templates_dir}")
@@ -32,13 +34,13 @@ def frontendfunction(description, color):
         shutil.rmtree(static_dir)
         print(f"Deleted the existing static directory: {static_dir}")
     move_files_and_folders(source_dir, templates_dir, static_dir, file_ext)
-    file_ext = '.css'  # Change this to '.css' or any other file extension as needed
+    file_ext = '.css'  
     source_dir = 'D:\\GP\\Website\\Graduation_project\\admin'
     templates_dir = 'D:/GP/Website/Graduation_project/myproject/myapp/templates'
     static_dir = 'D:/GP/Website/Graduation_project/myproject/myapp/static'
 
     move_files_and_folders(source_dir, static_dir, templates_dir, file_ext)
-    file_ext = '.css'  # Change this to '.css' or any other file extension as needed
+    file_ext = '.css'  
     source_dir = 'D:/GP/Website/Graduation_project/custom_admin'
     templates_dir = 'D:/GP/Website/Graduation_project/myproject/myapp/templates'
     static_dir = 'D:/GP/Website/Graduation_project/myproject/myapp/static'

@@ -114,7 +114,7 @@ if __name__ == "__main__":
 
     entities_with_attr, entities_with_pks, relationships = get_database(description, entities)
 
-    # Convert sets to lists recursively
+
     entities_with_attr = convert_sets_to_lists(entities_with_attr)
     entities_with_pks = convert_sets_to_lists(entities_with_pks)
     relationships = convert_sets_to_lists(relationships)

@@ -13,14 +13,14 @@ import { IoMdClose } from "react-icons/io";
 import "./EntsAttrsTable.css"; // Assuming you have a CSS file for styling
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { green, purple } from "@mui/material/colors";
-import {  CssBaseline  } from '@mui/material';
+import { CssBaseline } from "@mui/material";
 import backgroundImage from "./assets/background.jpg";
 import CircularProgress from "@mui/material/CircularProgress";
-import { red } from '@mui/material/colors';
-import headerImage from './assets/headerImage.png'; 
+import { red } from "@mui/material/colors";
+import headerImage from "./assets/headerImage.png";
 
 const theme = createTheme({
-    palette: {
+  palette: {
     primary: {
       main: "#FFAC35",
     },
@@ -32,28 +32,28 @@ const theme = createTheme({
     MuiInput: {
       styleOverrides: {
         root: {
-          '&:before': {
-            borderBottomColor: '#FFAC35', 
+          "&:before": {
+            borderBottomColor: "#FFAC35",
           },
-          '&:hover:not(.Mui-disabled):before': {
-            borderBottomColor: '#FFFFFF', 
+          "&:hover:not(.Mui-disabled):before": {
+            borderBottomColor: "#FFFFFF",
           },
-          '&:after': {
-            borderBottomColor: '#FFFFFF', 
+          "&:after": {
+            borderBottomColor: "#FFFFFF",
           },
         },
         input: {
-          color: 'white', 
+          color: "white",
         },
       },
     },
     MuiInputLabel: {
       styleOverrides: {
         root: {
-          color: '#FFAC35', 
+          color: "#FFAC35",
         },
         focused: {
-          color: '#FFFFFF', 
+          color: "#FFFFFF",
         },
       },
     },
@@ -64,10 +64,12 @@ export default function FormDialog() {
   const [openDialog, setOpenDialog] = useState(false);
   const [showEntsOnly, setShowEntsOnly] = useState(true);
   const [showColorPicker, setShowColorPicker] = useState(false);
-  const [guiDescription, setGUIDescription] = useState('');
+  const [guiDescription, setGUIDescription] = useState("");
   const [databaseDescription, setDatabaseDescription] = useState("");
   const [result, setResult] = useState([]);
   const [error, setError] = useState(false);
+  const [finished, setfinished] = useState(false);
+
   const [newElement, setNewElement] = useState("");
   const [hideDeleteIcons, setHideDeleteIcons] = useState(false);
   const [entitiesWithAttr, setEntitiesWithAttr] = useState([]);
@@ -83,9 +85,10 @@ export default function FormDialog() {
 
   const handleAdd = (entity, newAttr) => {
     if (newAttr) {
+      const sanitizedAttr = newAttr.replace(/ /g, "_");
       setEntitiesWithAttr((prevEntities) => ({
         ...prevEntities,
-        [entity]: [...prevEntities[entity], newAttr],
+        [entity]: [...prevEntities[entity], sanitizedAttr],
       }));
     }
   };
@@ -108,9 +111,8 @@ export default function FormDialog() {
   };
 
   const handleSubmit = async (e) => {
-    
-    
-    
+    //// back-requests
+
     if (!databaseDescription.trim()) {
       setError(true);
       return;
@@ -134,15 +136,12 @@ export default function FormDialog() {
       console.error("There was an error processing the text!", error);
       setError(true);
     }
-
-
-
-
   };
 
   const handleAddElement = () => {
     if (newElement.trim()) {
-      const updatedResult = [...result, newElement];
+      const sanitizedElement = newElement.replace(/ /g, "_");
+      const updatedResult = [...result, sanitizedElement];
       setResult(updatedResult);
       setNewElement("");
     }
@@ -196,10 +195,9 @@ export default function FormDialog() {
       console.log(entitiesWithAttr);
       console.log(entitiesWithPKs);
       console.log(relationshipsAsTuples);
-   
-        setOpenDialog(false); 
-        setShowEntsOnly(true);
-  
+
+      setShowEntsOnly(true);
+
       await axios.post("save", {
         entitiesWithAttr,
         entitiesWithPKs,
@@ -209,11 +207,10 @@ export default function FormDialog() {
       setEntitiesWithPKs([]);
       setRelationships([]);
       setResult([]);
-
     } catch (error) {
       console.error("Error saving data:", error);
     }
-  
+
     if (!guiDescription.trim()) {
       setError(true);
       return;
@@ -222,40 +219,40 @@ export default function FormDialog() {
       setError(true);
       return;
     }
-  
+
     try {
       console.log(guiDescription);
       console.log(selectedColor);
-  
+
       const response = await fetch("get-temp", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ description: guiDescription, color: selectedColor }),
+        body: JSON.stringify({
+          description: guiDescription,
+          color: selectedColor,
+        }),
       });
-  
+
       console.log(response);
-  
+
       setError(false);
     } catch (error) {
       console.error("There was an error processing the text!", error);
       setError(true);
-    
     }
-    setDatabaseDescription("")
-    setGUIDescription("")
-    setSelectedColor("#ffffff")
 
+    setfinished(true);
   };
-  
 
   const handleCloseDialog = () => {
+    setfinished(false); 
     setOpenDialog(false);
     setShowEntsOnly(true);
-    setDatabaseDescription("")
-    setGUIDescription("")
-    setSelectedColor("#ffffff")
+    setDatabaseDescription("");
+    setGUIDescription("");
+    setSelectedColor("#ffffff");
     setResult([]);
     setNewElement("");
     setHideDeleteIcons(false);
@@ -264,45 +261,42 @@ export default function FormDialog() {
   const handleColorChange = (color) => {
     setSelectedColor(color);
     console.log("Selected color in App:", color);
-
   };
 
   const toggleColorPicker = () => {
     setShowColorPicker((prevShowColorPicker) => !prevShowColorPicker);
   };
 
-
   const divStyle = {
     backgroundImage: `url(${backgroundImage})`,
-    backgroundSize: 'cover',
-    backgroundRepeat: 'no-repeat',
-    backgroundPosition: 'center',
-    minHeight: '100vh', 
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-    gap: '20px',        
-    paddingLeft: '200px',
-    paddingBottom: '100px',
-
+    backgroundSize: "cover",
+    backgroundRepeat: "no-repeat",
+    backgroundPosition: "center",
+    minHeight: "100vh",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    justifyContent: "center",
+    gap: "20px",
+    paddingLeft: "200px",
+    paddingBottom: "100px",
   };
-  
+
   const textFieldStyle = {
-    width: "50%", 
+    width: "50%",
     borderColor: error ? "red" : "black",
-    
   };
 
   return (
     <div className="App" style={divStyle}>
       <ThemeProvider theme={theme}>
-      <CssBaseline />
+        <CssBaseline />
         <React.Fragment>
-
-        <img src={headerImage} alt="Header" style={{ width: '20%', height: 'auto' ,marginBottom:'-80px'}}  />
-
-   
+          <img
+            src={headerImage}
+            alt="Header"
+            style={{ width: "20%", height: "auto", marginBottom: "-80px" }}
+          />
 
           <TextField
             id="standard-basic-2"
@@ -331,7 +325,11 @@ export default function FormDialog() {
             onChange={(e) => setGUIDescription(e.target.value)}
           />
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <Button color="primary" variant="contained" onClick={toggleColorPicker}>
+            <Button
+              color="primary"
+              variant="contained"
+              onClick={toggleColorPicker}
+            >
               {showColorPicker ? "Close" : "Open"} Color Picker
             </Button>
           </div>
@@ -340,7 +338,11 @@ export default function FormDialog() {
           ) : (
             <></>
           )}
-          <Button variant="contained" sx={{alignSelf:'center',marginLeft:'-100px'}} onClick={handleSubmit}>
+           <Button
+            variant="contained"
+            sx={{ alignSelf: "center", marginLeft: "-100px" }}
+            onClick={handleSubmit}
+          >
             Submit
           </Button>
 
@@ -353,6 +355,11 @@ export default function FormDialog() {
               <h2>Customize your database</h2>
             </DialogTitle>
             <DialogContent>
+            {finished && (
+                <DialogContentText style={{ color: "green" }}>
+                  Your website is ready!
+                </DialogContentText>
+              )}
               {showEntsOnly ? (
                 <>
                   {result.length > 0 ? (
@@ -390,25 +397,25 @@ export default function FormDialog() {
                         value={newElement}
                         onChange={(e) => setNewElement(e.target.value)}
                         sx={{
-                          '& .MuiInput-root': {
-                            '&:before': {
-                              borderBottomColor: 'black', 
+                          "& .MuiInput-root": {
+                            "&:before": {
+                              borderBottomColor: "black",
                             },
-                            '&:hover:not(.Mui-disabled):before': {
-                              borderBottomColor: 'black', 
+                            "&:hover:not(.Mui-disabled):before": {
+                              borderBottomColor: "black",
                             },
-                            '&:after': {
-                              borderBottomColor: 'black',
+                            "&:after": {
+                              borderBottomColor: "black",
                             },
-                            '& input': {
-                              color: 'black', 
+                            "& input": {
+                              color: "black",
                             },
                           },
-                          '& .MuiInputLabel-root': {
-                            color: 'black', 
+                          "& .MuiInputLabel-root": {
+                            color: "black",
                           },
-                          '& .MuiInputLabel-root.Mui-focused': {
-                            color: 'black', 
+                          "& .MuiInputLabel-root.Mui-focused": {
+                            color: "black",
                           },
                         }}
                       />
@@ -417,18 +424,19 @@ export default function FormDialog() {
                       </Button>
                     </>
                   ) : (
-                    <DialogContentText>
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          height: "100px",
-                        }}
-                      >
-                        <CircularProgress color="secondary" />
-                      </div>
-                    </DialogContentText>
+                    !finished && (
+                      <DialogContentText>
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            height: "100px",
+                          }}
+                        >
+                          <CircularProgress color="secondary" />
+                        </div>
+                      </DialogContentText>)
                   )}
                 </>
               ) : (
@@ -498,29 +506,28 @@ export default function FormDialog() {
                                     }
                                   }}
                                   sx={{
-                                    '& .MuiInput-root': {
-                                      '&:before': {
-                                        borderBottomColor: 'black',
+                                    "& .MuiInput-root": {
+                                      "&:before": {
+                                        borderBottomColor: "black",
                                       },
-                                      '&:hover:not(.Mui-disabled):before': {
-                                        borderBottomColor: 'black',
+                                      "&:hover:not(.Mui-disabled):before": {
+                                        borderBottomColor: "black",
                                       },
-                                      '&:after': {
-                                        borderBottomColor: 'black', 
+                                      "&:after": {
+                                        borderBottomColor: "black",
                                       },
-                                      '& input': {
-                                        color: 'black', 
+                                      "& input": {
+                                        color: "black",
                                       },
                                     },
-                                    '& .MuiInputLabel-root': {
-                                      color: 'black', 
+                                    "& .MuiInputLabel-root": {
+                                      color: "black",
                                     },
-                                    '& .MuiInputLabel-root.Mui-focused': {
-                                      color: 'black', 
+                                    "& .MuiInputLabel-root.Mui-focused": {
+                                      color: "black",
                                     },
                                   }}
                                 />
-
                               </div>
                             </div>
                           </li>
@@ -552,15 +559,16 @@ export default function FormDialog() {
               <Button color="secondary" onClick={handleCloseDialog}>
                 Close
               </Button>
-              {showEntsOnly ? (
-                <Button  color="secondary" onClick={handleDialogSubmit}>
+              {showEntsOnly && !finished ? (
+                <Button color="secondary" onClick={handleDialogSubmit}>
                   Submit
                 </Button>
               ) : (
-                <Button color="secondary" onClick={handleSave}>
+                !finished && ( <Button color="secondary" onClick={handleSave}>
                   Ok
-                </Button>
+                </Button>)
               )}
+              
             </DialogActions>
           </Dialog>
         </React.Fragment>

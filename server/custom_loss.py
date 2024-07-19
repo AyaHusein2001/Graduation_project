@@ -21,13 +21,12 @@ def focal_loss(alpha=None, gamma=2.0):
     return focal_loss_fixed
 
 def custom_loss_(y_true, y_pred):
-    # Define penalties (higher penalty for misclassifying label 1 and label 2)
-    penalty = tf.constant([1.0, 5.0,5.0,2.0, 5.0])  # Adjust penalties as needed
 
-    # Compute loss using categorical crossentropy
+    penalty = tf.constant([1.0, 5.0,5.0,2.0, 5.0]) 
+
+
     loss = tf.keras.losses.categorical_crossentropy(y_true, y_pred)
 
-    # Apply penalties based on true labels
     weighted_loss = tf.multiply(loss, tf.gather(penalty, tf.argmax(y_true, axis=-1)))
 
     return weighted_loss

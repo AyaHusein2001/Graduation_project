@@ -31,9 +31,9 @@ def collect_descriptions_from_folder(folder_path,label):
     return descriptions
 
 def collect_all_data():
-    fol_name=['topic0_food','topic1_hotel','topic2_courses']
-    labels=["Food and Drink","Hotel","Courses"]
-    label_to_folder = dict(zip(labels, fol_name))  # Map labels to folder nam
+    fol_name=['coffee','fittness','resturant']
+    labels=['coffee','fittness','resturant']
+    label_to_folder = dict(zip(labels, fol_name))  
     data=[]
     for i,fol in enumerate(fol_name):
         #3dly al path
@@ -50,28 +50,16 @@ def preprocess_text(text):
 
 def classify(data,user_input,label_to_folder):
 
-    # Split data into descriptions and labels
     descriptions, labels = zip(*data)
 
-    # Preprocess the text data
-
     descriptions = [preprocess_text(desc) for desc in descriptions]
-
-    # Split the data into training and testing sets
     X_train, X_test, y_train, y_test = train_test_split(descriptions, labels, test_size=0.2, random_state=42)
-
-    # Convert text data into numerical features using TF-IDF
     vectorizer = TfidfVectorizer()
     X_train_tfidf = vectorizer.fit_transform(X_train)
     X_test_tfidf = vectorizer.transform(X_test)
-
-    # Train a Logistic Regression classifier
     classifier = LogisticRegression()
     classifier.fit(X_train_tfidf, y_train)
-
-    # Calculate accuracy and print classification report
     y_pred = classifier.predict(X_test_tfidf)
-    # Function to classify new descriptions and return folder paths
     def classify_and_get_folders(new_descriptions, classifier, vectorizer, label_to_folder):
         new_descriptions_preprocessed = [preprocess_text(desc) for desc in new_descriptions]
         new_descriptions_tfidf = vectorizer.transform(new_descriptions_preprocessed)
@@ -79,16 +67,10 @@ def classify(data,user_input,label_to_folder):
         
         folders = []
         for desc, category in zip(new_descriptions, predictions):
-            #3dly al path
             folder =  label_to_folder[category]
             folders.append(folder)
         
         return folders
-
-    # Example new descriptions
-    
-
-    # Get the folders for the new descriptions
     folders = classify_and_get_folders(user_input, classifier, vectorizer, label_to_folder)
     return folders
 
@@ -137,8 +119,6 @@ def compute_similarity(embeddings, query_embedding):
 def collect_descriptions_folder(folder_path):
     descriptions = []
     file_to_folder = {}
-
-    # Loop through each file in the desc folder
     desc_folder = os.path.join(folder_path, 'desc')
     pages_folder = os.path.join(folder_path, 'pages')
 
@@ -148,7 +128,7 @@ def collect_descriptions_folder(folder_path):
             with open(file_path, 'r', encoding='utf-8') as file:
                 content = file.read().strip()
                 descriptions.append(content)
-                file_to_folder[content] = os.path.join(pages_folder, filename[:-4])  # Mapping description to folder
+                file_to_folder[content] = os.path.join(pages_folder, filename[:-4])
     
     return descriptions, file_to_folder
 
@@ -156,7 +136,7 @@ def retrieve_top_k_websites(folder_path, user_input, word2vec_model, tfidf_vecto
     descriptions, file_to_folder = collect_descriptions_folder(folder_path)
     preprocessed_descriptions = preprocess_texts(descriptions)
     embeddings = text_to_embedding(preprocessed_descriptions, word2vec_model, tfidf_vectorizer)
-    preprocessed_input = preprocess_text(user_input)  # Ensure user_input is a string here
+    preprocessed_input = preprocess_text(user_input) 
     input_embedding = text_to_embedding([preprocessed_input], word2vec_model, tfidf_vectorizer)[0]
     similarities = compute_similarity(embeddings, input_embedding)
     top_k_indices = similarities.argsort()[-k:][::-1]
@@ -167,9 +147,7 @@ def retrieve_top_k_websites(folder_path, user_input, word2vec_model, tfidf_vecto
 def top(folders,description):
     folder_path = folders[0]
     word2vec_model_path = 'D:\GP\Website\Graduation_project\GoogleNews-vectors-negative300.bin.gz'
-
-    # Load the model from the local file
-    word2vec_model = KeyedVectors.load_word2vec_format(word2vec_model_path, binary=True, limit=3000000)  # Load the first 100,000 vectors
+    word2vec_model = KeyedVectors.load_word2vec_format(word2vec_model_path, binary=True, limit=3000000)  
 
     vectorizer = TfidfVectorizer()
 
@@ -180,21 +158,19 @@ def top(folders,description):
 def trans(top_k_folders):
    if os.path.exists('D:\GP\Website\Graduation_project\9'):
      shutil.rmtree('D:\GP\Website\Graduation_project\9')
-   shutil.copytree(top_k_folders[0], 'D:\GP\Website\Graduation_project\9')
+   shutil.copytree(top_k_folders, 'D:\GP\Website\Graduation_project\9')
 
 def pick_color():
-    # Open the color picker dialog
     color_code = colorchooser.askcolor(title="Choose a color")[1]
     base_color = Color(color_code)
     return base_color.hex
 
 def paths(main_folder):
-    html_file_path = os.path.join(main_folder, 'index.html')
-    css_folder_path = os.path.join(main_folder, 'css')
-    js_folder_path = os.path.join(main_folder, 'js')
+    html_file_path = os.path.join(main_folder, 'home.html')
     return html_file_path
 
 def read_css(file_path):
+    file_path = file_path.rstrip('\\')
     with open(file_path, 'r', encoding='utf-8') as file:
         return file.read()
 
@@ -203,7 +179,6 @@ def write_css(file_path, content):
         file.write(content)
 
 def find_colors(css_content):
-    # Regex to find hex, rgb, rgba colors
     hex_color_regex = r'#[0-9a-fA-F]{3,6}'
     rgb_color_regex = r'rgb\s?\(\s?\d{1,3}\s?,\s?\d{1,3}\s?,\s?\d{1,3}\s?\)'
     rgba_color_regex = r'rgba\s?\(\s?\d{1,3}\s?,\s?\d{1,3}\s?,\s?\d{1,3}\s?,\s?\d?\.?\d+\s?\)'
@@ -217,7 +192,9 @@ def rgba_to_hex(rgba):
         r, g, b = map(int, match.groups())
         return '#{:02x}{:02x}{:02x}'.format(r, g, b)
     return rgba
-
+def is_valid_hex_color(color):
+    match = re.fullmatch(r'#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})', color)
+    return match is not None
 def generate_new_palette(base_color, old_colors):
     base = Color(base_color)
     new_palette = [base]
@@ -225,6 +202,8 @@ def generate_new_palette(base_color, old_colors):
     for old_color in old_colors[1:]:
         if 'rgba' in old_color:
             old_color = rgba_to_hex(old_color)
+        if not is_valid_hex_color(old_color):
+            continue
         old_c = Color(old_color)
         new_c = Color(base_color)
         new_c.luminance = old_c.luminance
@@ -238,18 +217,13 @@ def replace_colors(css_content, old_colors, new_colors):
     return css_content
 
 def get_linked_css_files(html_file_path):
-    # Read the HTML file
     with open(html_file_path, 'r', encoding='utf-8') as file:
         soup = BeautifulSoup(file, 'lxml')
-    
-    # Find all <link> tags with rel="stylesheet"
     css_files = []
     for link_tag in soup.find_all('link', rel='stylesheet'):
         href = link_tag.get('href')
         if href:
-            # Check if it's a local path or an external URL
             if href.startswith('http://') or href.startswith('https://'):
-                # Handle external URLs if needed
                 do=None
             else:
                 css_files.append(href)
@@ -258,170 +232,48 @@ def get_linked_css_files(html_file_path):
 
 def modifyallcss(main_folder,css_files,base_color):
     for css_file in css_files:
+        pattern = r"{% static '([^']+)' %}"
+        css_file = re.sub(pattern, r"\1", css_file)
+        css_file.replace('/', '\\')
+        print("css_file",css_file)
         input_css_path = os.path.join(main_folder, css_file)
-        output_css_path = os.path.join(main_folder, css_file)  # Adjust if needed
-        
-        # Read CSS content
+        output_css_path = os.path.join(main_folder, css_file)  
         css_content = read_css(input_css_path)
-        
-        # Find colors in CSS
         old_colors = find_colors(css_content)
-        
-        # Generate new color palette
-            # Example base color
         if len(old_colors) != 0:
             new_palette = generate_new_palette(base_color, old_colors)
             new_colors = [color.hex for color in new_palette]
-            
-            
-            # Step 4: Replace old colors with new colors
             updated_css_content = replace_colors(css_content, old_colors, new_colors)
-            
-            # Step 5: Write the updated CSS content to a new file
             write_css(output_css_path, updated_css_content)
             
 
-def modify_html(html_content, details):
-    try:
-        # Modify title
-        html_content = re.sub(r'<title>.*?</title>', f"<title>{details.get('topic', 'My Website')}</title>", html_content)
-
-        # Modify header
-        if re.search(r'<h1>.*?</h1>', html_content):
-            html_content = re.sub(r'<h1>.*?</h1>', f"<h1>Welcome to our {details.get('topic', 'website')}</h1>", html_content)
-        else:
-            html_content = re.sub(r'<h2>.*?</h2>', f"<h2>Welcome to our {details.get('topic', 'website')}</h2>", html_content)
-        
-        # Modify location if available
-        if 'location' in details:
-            location_html = f"<p>Location: {details['location']}</p>"
-            html_content = re.sub(r'<!-- location -->', location_html, html_content)
-        # Modify hotline if available
-        if 'hotline' in details:
-            hotline_html = f"<p>Hotline: {details['hotline']}</p>"
-            html_content = re.sub(r'<!-- hotline -->', hotline_html, html_content)
-
-    except Exception as e:
-        str(e)
-
-    return html_content
-
-
-def collect_feedback(description, extracted_details, user_feedback):
-    try:
-        # Example: Assume user provides corrected details
-        corrected_details = {
-            'topic': 'coffee website',
-            'location': 'Cairo',
-            'colors': ['brown', 'cafe'],
-            'hotline': '19888'
-        }
-
-        # Integrate user feedback to improve accuracy (example)
-        updated_details = {**extracted_details, **corrected_details}
-
-        return updated_details
-
-    except Exception as e:
-        return extracted_details  # Return original extracted details in case of error
-
-
-def extract_details_advanced(description):
-    details = {}
-    nlp = spacy.load('en_core_web_sm')
-    keywords = {
-    'topic': ['website', 'web page', 'site', 'online platform', 'internet presence', 'blog', 'ecommerce site', 'portfolio'],
-    'location': ['in', 'located in', 'at', 'based in', 'headquartered in', 'global', 'regional', 'national', 'local'],
-    'colors': ['colors', 'color scheme', 'color palette', 'shades', 'hue', 'primary color', 'secondary color', 'accent color', 'gradient'],
-    'hotline': ['hotline', 'contact', 'phone number', 'customer service', 'support line', 'helpline', 'contact number', 'service hotline']
-     }
-    try:
-        # Use SpaCy for NER
-        doc = nlp(description)
-
-        # Extract entities
-        for ent in doc.ents:
-            if ent.label_ == 'ORG' and 'topic' not in details:
-                details['topic'] = ent.text
-            elif ent.label_ == 'GPE' and 'location' not in details:
-                details['location'] = ent.text
-            elif ent.label_ == 'PRODUCT' and 'topic' not in details:
-                details['topic'] = ent.text
-
-        # Extract colors and hotline based on keywords
-        for token in doc:
-            if token.text.lower() in keywords['colors'] and token.i + 1 < len(doc):
-                details['primary_color'] = doc[token.i + 1].text
-            elif token.text.lower() in keywords['hotline'] and token.i + 1 < len(doc):
-                next_token = doc[token.i + 1]
-                if next_token.like_num:
-                    details['hotline'] = next_token.text
-
-    except Exception as e:
-       str(e)
-
-    return details
-
-def readandwrite(html_file_path,updated_details):
-    with open(html_file_path, 'r', encoding='utf-8') as f:
-        html_content = f.read()
-    modified_html = modify_html(html_content, updated_details)
-    with open(html_file_path, 'w', encoding='utf-8') as f:
-        f.write(modified_html)
-
-import os
-import shutil
-
 def move_files_and_folders(source_dir, templates_dir, static_dir):
-    # Create target directories if they don't exist
     os.makedirs(templates_dir, exist_ok=True)
     os.makedirs(static_dir, exist_ok=True)
 
-    # Loop through all items in the source directory
     for item in os.listdir(source_dir):
         source_item = os.path.join(source_dir, item)
-        
-        # If the item is a file and ends with .html, move it to the templates directory
         if os.path.isfile(source_item) and item.endswith('.html'):
             shutil.copy(source_item, os.path.join(templates_dir, item))
-        
-        # If the item is a directory, move it to the static directory
         elif os.path.isdir(source_item):
             shutil.copytree(source_item, os.path.join(static_dir, item))
 def move_admin(source_dir, templates_dir, static_dir):
-    # Create target directories if they don't exist
     os.makedirs(templates_dir, exist_ok=True)
     os.makedirs(static_dir, exist_ok=True)
-
-    # Loop through all items in the source directory
     for item in os.listdir(source_dir):
         source_item = os.path.join(source_dir, item)
-        
-        # If the item is a file and ends with .html, move it to the templates directory
         if os.path.isfile(source_item) and item.endswith('.css'):
             shutil.copy(source_item, os.path.join(templates_dir, item))
-        
-        # If the item is a directory, move it to the static directory
         elif os.path.isdir(source_item):
             shutil.copytree(source_item, os.path.join(static_dir, item))
 
 def replace_file(old_file_path, new_file_path):
-    """
-    Deletes the old file and replaces it with the new file.
-    
-    Args:
-        old_file_path (str): The path to the old file to be deleted.
-        new_file_path (str): The path to the new file to replace the old file.
-    """
-    # Check if the old file exists
     if os.path.exists(old_file_path):
-        # Delete the old file
         os.remove(old_file_path)
         print(f"Deleted the old file: {old_file_path}")
     else:
         print(f"The old file does not exist: {old_file_path}")
     
-    # Copy the new file to the location of the old file
     shutil.copy(new_file_path, old_file_path)
     print(f"Replaced with the new file: {new_file_path}")
 
@@ -520,20 +372,15 @@ def home(request):
 
 def move_files_and_folders(source_dir, templates_dir, static_dir, file_extension):
 
-    # Create target directories if they don't exist
     os.makedirs(templates_dir, exist_ok=True)
     os.makedirs(static_dir, exist_ok=True)
 
-    # Loop through all items in the source directory
     for item in os.listdir(source_dir):
         source_item = os.path.join(source_dir, item)
-        
-        # If the item is a file and ends with the specified file extension, move it to the templates directory
         if os.path.isfile(source_item) and item.endswith(file_extension):
             shutil.copy(source_item, os.path.join(templates_dir, item))
             print(f"Copied {item} to {templates_dir}")
         
-        # If the item is a directory, move it to the static directory
         elif os.path.isdir(source_item):
             destination_dir = os.path.join(static_dir, item)
             shutil.copytree(source_item, destination_dir)
